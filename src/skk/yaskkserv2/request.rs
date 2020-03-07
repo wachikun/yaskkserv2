@@ -17,9 +17,26 @@ impl Request {
         )?;
         let json = json::parse(&content)?;
         if json.is_array() && json[0].is_array() && (json[0].len() >= 2) {
-            for u in json[0][1].members() {
-                if let Some(s) = u.as_str() {
-                    result.push(Vec::from(s.as_bytes()));
+            // 2 項目の場合は特殊処理として合成してしまう
+            // (1 項目ならそのまま、 3 項目以上は組み合わせが膨大になるので、その場合は 1 項目として扱う)
+            if json.len() == 2 {
+                for u in json[0][1].members() {
+                    if let Some(s) = u.as_str() {
+                        let sbytes = s.as_bytes();
+                        for iu in json[1][1].members() {
+                            if let Some(is) = iu.as_str() {
+                                let mut v = Vec::from(sbytes);
+                                v.extend_from_slice(is.as_bytes());
+                                result.push(v);
+                            }
+                        }
+                    }
+                }
+            } else {
+                for u in json[0][1].members() {
+                    if let Some(s) = u.as_str() {
+                        result.push(Vec::from(s.as_bytes()));
+                    }
                 }
             }
         } else {
