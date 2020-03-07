@@ -1,13 +1,91 @@
 use crate::skk::yaskkserv2::*;
 
 impl Request {
+    fn get_result(json: json::JsonValue, max_candidates_length: usize) -> Vec<Vec<u8>> {
+        let mut result = Vec::new();
+        match json.len() {
+            2 => {
+                for u_0 in json[0][1].members() {
+                    if let Some(s_0) = u_0.as_str() {
+                        let s_0_bytes = s_0.as_bytes();
+                        for u_1 in json[1][1].members() {
+                            if let Some(s_1) = u_1.as_str() {
+                                let mut v = Vec::from(s_0_bytes);
+                                v.extend_from_slice(s_1.as_bytes());
+                                result.push(v);
+                            }
+                        }
+                    }
+                }
+            },
+            3 => {
+                for u_0 in json[0][1].members() {
+                    if let Some(s_0) = u_0.as_str() {
+                        let s_0_bytes = s_0.as_bytes();
+                        for u_1 in json[1][1].members() {
+                            if let Some(s_1) = u_1.as_str() {
+                                let s_1_bytes = s_1.as_bytes();
+                                for u_2 in json[2][1].members() {
+                                    if let Some(s_2) = u_2.as_str() {
+                                        let mut v = Vec::from(s_0_bytes);
+                                        v.extend_from_slice(s_1_bytes);
+                                        v.extend_from_slice(s_2.as_bytes());
+                                        result.push(v);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            4 => {
+                for u_0 in json[0][1].members() {
+                    if let Some(s_0) = u_0.as_str() {
+                        let s_0_bytes = s_0.as_bytes();
+                        for u_1 in json[1][1].members() {
+                            if let Some(s_1) = u_1.as_str() {
+                                let s_1_bytes = s_1.as_bytes();
+                                for u_2 in json[2][1].members() {
+                                    if let Some(s_2) = u_2.as_str() {
+                                        let s_2_bytes = s_2.as_bytes();
+                                        for u_3 in json[3][1].members() {
+                                            if let Some(s_3) = u_3.as_str() {
+                                                let mut v = Vec::from(s_0_bytes);
+                                                v.extend_from_slice(s_1_bytes);
+                                                v.extend_from_slice(s_2_bytes);
+                                                v.extend_from_slice(s_3.as_bytes());
+                                                result.push(v);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            _ => {
+                for u in json[0][1].members() {
+                    if let Some(s) = u.as_str() {
+                        result.push(Vec::from(s.as_bytes()));
+                    }
+                }
+            },
+        }
+        if result.len() > max_candidates_length {
+            result[..max_candidates_length].to_vec()
+        } else {
+            result
+        }
+    }
+
     pub(in crate::skk) fn request_google_japanese_input(
         protocol: &str,
         midashi: &[u8],
         timeout: u64,
+        max_candidates_length: usize,
     ) -> Result<Vec<Vec<u8>>, SkkError> {
         let encoded_midashi: String = url::form_urlencoded::byte_serialize(midashi).collect();
-        let mut result = Vec::new();
         let content = Self::request(
             &format!(
                 "{}{}{}",
@@ -16,29 +94,9 @@ impl Request {
             timeout,
         )?;
         let json = json::parse(&content)?;
+        let mut result = Vec::new();
         if json.is_array() && json[0].is_array() && (json[0].len() >= 2) {
-            // 2 項目の場合は特殊処理として合成してしまう
-            // (1 項目ならそのまま、 3 項目以上は組み合わせが膨大になるので、その場合は 1 項目として扱う)
-            if json.len() == 2 {
-                for u in json[0][1].members() {
-                    if let Some(s) = u.as_str() {
-                        let sbytes = s.as_bytes();
-                        for iu in json[1][1].members() {
-                            if let Some(is) = iu.as_str() {
-                                let mut v = Vec::from(sbytes);
-                                v.extend_from_slice(is.as_bytes());
-                                result.push(v);
-                            }
-                        }
-                    }
-                }
-            } else {
-                for u in json[0][1].members() {
-                    if let Some(s) = u.as_str() {
-                        result.push(Vec::from(s.as_bytes()));
-                    }
-                }
-            }
+            result = Request::get_result(json, max_candidates_length);
         } else {
             Yaskkserv2::log_error(&format!("json error? json={:?}", json));
         }

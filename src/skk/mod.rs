@@ -46,6 +46,7 @@ const DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS: u64 = 1000;
 const DEFAULT_GOOGLE_CACHE_FULL_PATH: &str = "/tmp/yaskkserv2.google_cache";
 const DEFAULT_GOOGLE_CACHE_ENTRIES: usize = 1024;
 const DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS: u64 = 30 * 24 * 60 * 60;
+const DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH: usize = 5 * 5;
 const DEFAULT_MAX_SERVER_COMPLETIONS: u32 = 64;
 const GOOGLE_JAPANESE_INPUT_URL: &str = "://www.google.com/transliterate?langpair=ja-Hira|ja&text=";
 const GOOGLE_SUGGEST_URL: &str = "://www.google.com/complete/search?hl=ja&output=toolbar&q=";
@@ -117,6 +118,7 @@ pub(in crate::skk) struct Config {
     google_cache_full_path: String,
     google_cache_entries: usize,
     google_cache_expire_seconds: u64,
+    google_max_candidates_length: usize,
     max_server_completions: u32,
     is_use_http: bool,
     is_use_google_cache: bool,
@@ -143,6 +145,7 @@ impl Config {
             google_cache_full_path: String::from(DEFAULT_GOOGLE_CACHE_FULL_PATH),
             google_cache_entries: DEFAULT_GOOGLE_CACHE_ENTRIES,
             google_cache_expire_seconds: DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS,
+            google_max_candidates_length: DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH,
             max_server_completions: DEFAULT_MAX_SERVER_COMPLETIONS,
             ..Default::default()
         }
@@ -158,6 +161,7 @@ impl Config {
     define_builder!(google_cache_full_path, String);
     define_builder!(google_cache_entries, usize);
     define_builder!(google_cache_expire_seconds, u64);
+    define_builder!(google_max_candidates_length, usize);
     define_builder!(max_server_completions, u32);
     define_builder!(is_use_http, bool);
     define_builder!(is_use_google_cache, bool);

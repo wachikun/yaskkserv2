@@ -26,6 +26,7 @@ impl Yaskkserv2CommandLine {
         let default_google_timeout_milliseconds = &DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS.to_string();
         let default_google_cache_entries = &DEFAULT_GOOGLE_CACHE_ENTRIES.to_string();
         let default_google_cache_expire_seconds = &DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS.to_string();
+        let default_google_max_candidates_length = &DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH.to_string();
         let default_max_server_completions = &DEFAULT_MAX_SERVER_COMPLETIONS.to_string();
         let mut app = app_from_crate!()
             .setting(clap::AppSettings::DeriveDisplayOrder)
@@ -54,6 +55,9 @@ impl Yaskkserv2CommandLine {
             .arg(clap::Arg::from_usage("--google-cache-expire-seconds=[SECONDS] 'google cache expire seconds'")
                  .validator(Self::google_cache_expire_seconds_validator)
                  .default_value(&default_google_cache_expire_seconds))
+            .arg(clap::Arg::from_usage("--google-max-candidates-length=[LENGTH] 'google max candidates length'")
+                 .validator(Self::google_max_candidates_length_validator)
+                 .default_value(&default_google_max_candidates_length))
             .arg(clap::Arg::from_usage("--max-server-completions=[MAX] 'max server completions'")
                  .validator(Self::max_server_completions_validator)
                  .default_value(&default_max_server_completions))
@@ -122,6 +126,10 @@ impl Yaskkserv2CommandLine {
 
     fn google_cache_expire_seconds_validator(val: String) -> Result<(), String> {
         Self::range_validator::<u64>(val, "illegal expire seconds", 1, 100 * 365 * 24 * 60 * 60)
+    }
+
+    fn google_max_candidates_length_validator(val: String) -> Result<(), String> {
+        Self::range_validator::<u64>(val, "illegal candidates length", 1, 1024)
     }
 
     fn max_server_completions_validator(val: String) -> Result<(), String> {

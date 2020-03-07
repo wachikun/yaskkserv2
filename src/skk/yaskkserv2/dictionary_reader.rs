@@ -166,6 +166,7 @@ impl DictionaryReader {
                 &self.google_japanese_input_protocol,
                 &utf8_midashi,
                 self.config.google_timeout_milliseconds,
+                self.config.google_max_candidates_length,
             )
             .unwrap_or_default();
             tmp_candidates.extend(Request::request_google_suggest(
@@ -179,6 +180,7 @@ impl DictionaryReader {
                 &self.google_japanese_input_protocol,
                 &utf8_midashi,
                 self.config.google_timeout_milliseconds,
+                self.config.google_max_candidates_length,
             )?;
             Candidates::remove_duplicates(&tmp_candidates)
         };
