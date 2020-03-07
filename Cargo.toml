@@ -2,6 +2,7 @@
 name = "yaskkserv2"
 version = "0.1.0"
 authors = ["Tadashi Watanabe <wac@umiushi.org>"]
+license = "MIT/Apache-2.0"
 description = "Yet Another Skkserv 2"
 edition = "2018"
 

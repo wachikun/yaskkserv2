@@ -1,4 +1,4 @@
-# yaskkserv2 とは
+# yaskkserv2
 
 Rust 製の skkserv です。
 
@@ -24,7 +24,7 @@ Rust 製の skkserv です。
 
 
 
-# install
+## install
 
 ```console
 $ cargo build --release
@@ -35,7 +35,7 @@ $ cp -av target/release/yaskkserv2_make_dictionary /YOUR-BIN-PATH/
 
 
 
-# 用語の定義
+## 用語の定義
 
 | 用語       | 意味                                              |                         |
 |:-----------|:--------------------------------------------------|:------------------------|
@@ -51,7 +51,7 @@ $ cp -av target/release/yaskkserv2_make_dictionary /YOUR-BIN-PATH/
 
 
 
-# つかいかた
+## つかいかた
 
 まず `yaskkserv2_make_dictionary` コマンドで、 SKK 辞書から yaskkserv2 用の dictionary を作成する必要があります。
 
@@ -70,22 +70,22 @@ $ yaskkserv2_make_dictionary --dictionary-filename=/tmp/dictionary.yaskkserv2 SK
 ```
 
 
-## 注意
+### 注意
 
 
-### 変換できない文字
+#### 変換できない文字
 
 SKK 辞書に文字コード変換できない文字が含まれる場合は、その文字コードが 16 進で dictionary へ出力されます。具体的には UTF-8 の絵文字などは EUC に変換することができません。
 
 protocol 制約上 client に手を入れる必要はありますが、 UTF-8 辞書の文字コードを変換せずに UTF-8 dictionary を出力する方法もあります(後述)。
 
 
-### アーキテクチャ依存
+#### アーキテクチャ依存
 
 dictionary はアーキテクチャ依存です。異なるアーキテクチャのマシンで作成された dictionary は使用できません。
 
 
-## Google Japanese Input
+### Google Japanese Input
 
 デフォルトでは dictionary に candidates が見付からなかった場合に Google Japanese Input API を呼びだします。
 
@@ -113,7 +113,7 @@ dictionary はアーキテクチャ依存です。異なるアーキテクチャ
 ```
 
 
-## UTF-8 dictionary
+### UTF-8 dictionary
 
 **SKK protocol は EUC を要求するため、 ddskk の関数 `skk-open-server` を UTF-8 で受信するように書き換える必要があります。**
 
@@ -146,7 +146,7 @@ $ yaskkserv2_make_dictionary --utf8 --dictionary-filename=/tmp/dictionary.yaskks
 <sub><span id="footnote6">6</span>: client -> server は EUC のまま、 server -> client だけが UTF-8 になります。</sub>
 
 
-## yaskkserv2 dictionary から SKK 辞書の作成 (逆変換)
+### yaskkserv2 dictionary から SKK 辞書の作成 (逆変換)
 
 下記コマンドで yaskkserv2 dictionary から SKK 辞書を作成することができます。
 
@@ -158,7 +158,7 @@ $ yaskkserv2_make_dictionary --dictionary-filename=/tmp/dictionary.yaskkserv2 --
 ```
 
 
-## Google Japanese Input cache から SKK 辞書の作成
+### Google Japanese Input cache から SKK 辞書の作成
 
 下記コマンドで Google Japanese Input cache から SKK 辞書を作成することができます。
 
@@ -170,7 +170,7 @@ $ yaskkserv2_make_dictionary --cache-filename=/tmp/yaskkserv2.cache --utf8 --out
 
 
 
-# yaskkserv との違い
+## yaskkserv との違い
 
 - yaskkserv2 は yaskkserv を Rust でシンプルに再設計して必要な機能のみ残したもの
 - Google Japanese Input を標準で有効に
@@ -196,11 +196,11 @@ $ yaskkserv2_make_dictionary --cache-filename=/tmp/yaskkserv2.cache --utf8 --out
 
 
 
-# test について
+## test について
 
 UNIX 系の環境 <sup>[9](#footnote9)</sup> を必要とし、下記のような動作をします。
 
-- 環境変数 `YASKKSERV2_TEST_DIRECTORY` が指定されていなければ、ダウンロードリソースを使用する test は失敗
+- 環境変数 `YASKKSERV2_TEST_DIRECTORY` が指定されていなければ test は失敗
 - 環境変数 `YASKKSERV2_TEST_HEAVY` が指定されていなければ、重い test は何もせず成功
 - curl で SKK 辞書などを環境変数 `YASKKSERV2_TEST_DIRECTORY` が指すディレクトリにダウンロード <sup>[10](#footnote10)</sup>
 - ダウンロードした gzip/tar を展開
@@ -218,7 +218,7 @@ UNIX 系の環境 <sup>[9](#footnote9)</sup> を必要とし、下記のよう�
 
 
 
-# benchmark
+## benchmark
 
 test 環境は下記のとおりです。
 
@@ -245,7 +245,7 @@ $ cargo run --release --bin=test_wrapper -- N benchmark
 で、 N 回 test を実行し、その平均値などを取得できます。
 
 
-## benchmark 結果
+### benchmark 結果
 
 下記コマンドの結果です。 client single thread は 30 回、 client multi thread は 10 回計測したものから最小値最大値を除いて平均を取った値となります。
 
@@ -285,7 +285,7 @@ $ cargo run --release --bin=test_wrapper -- 10 echo_server_benchmark
 | UTF-8 abbrev random     | 21k        | -         | -                  | -             |
 
 
-## 解説
+### 解説
 
 skkserv 自体が単純なサーバである上 yaskkserv2 と yaskkserv の基本的な構造も近いことから、おおまかな benchmark の傾向は似たようなものとなりましたが、ほぼ同程度の rps. となったのは偶然の結果です。これは例えば Rust の I/O library を変更したり、 dictionary パラメータを変更するだけで数 krps. の変動があるためです。
 
@@ -304,7 +304,7 @@ client multi thread で std::net echo の rps. が極端に高いのは、サー
 
 
 
-# yaskkserv2 dictionary
+## yaskkserv2 dictionary
 
 yaskkserv2 dictionary には下記のデータが含まれます。
 
@@ -321,7 +321,7 @@ string blocks に含まれる midashi は常に EUC で、 candidates は EUC �
 
 
 
-# SKK protocol memo
+## SKK protocol memo
 
 下記がこの memo の情報源となります。
 
@@ -330,7 +330,7 @@ string blocks に含まれる midashi は常に EUC で、 candidates は EUC �
 - <a href="http://pc10.2ch.net/test/read.cgi/unix/1124001722/74">2ch SKK専用スレッド Part7 の 74 さん</a>
 
 
-## はじめに
+### はじめに
 
 ddskk では変数 `skk-jisyo-code` で辞書の文字コードを設定ができますが、この変数はあくまでも辞書に対するもので、サーバとのやりとりには使用されません。
 
@@ -356,7 +356,7 @@ SKK protocol は protocol によって終端コードがまちまちで、実装
 <sub><span id="footnote13">13</span>: Rust の `read_until()` がそのままでは使えない!</sub>
 
 
-## "0"
+### "0"
 
 | server read 終端コード |
 |:-----------------------|
@@ -368,7 +368,7 @@ SKK protocol は protocol によって終端コードがまちまちで、実装
 ddskk が emacs 終了時に送信します。余談ですが、正常に切断されなかった場合 emacs がコネクションを掴んだままになり、 emacs は終了しなくなります。
 
 
-## "1EucMidashi "
+### "1EucMidashi "
 
 | server read 終端コード | server send 終端コード |
 |:-----------------------|:-----------------------|
@@ -385,7 +385,7 @@ midashi が存在しない場合は入力の先頭の `"1"` を `"4"` に変換�
 <sub><span id="footnote14">14</span>: 実は protocol 的には 4 で始まる文字列ならば何でも良いらしいですが、入力を含めないと一部のクライアントで問題が出る場合があるとのことです。</sub>
 
 
-## "4EucMidashi "
+### "4EucMidashi "
 
 | server read 終端コード | server send 終端コード |
 |:-----------------------|:-----------------------|
@@ -420,7 +420,7 @@ yaskkserv2 では
 といった実装になっています。
 
 
-## "2"
+### "2"
 
 | server read 終端コード | server send 終端コード |
 |:-----------------------|:-----------------------|
@@ -432,7 +432,7 @@ yaskkserv2 では
 されていることに注意が必要です。
 
 
-## "3"
+### "3"
 
 | server read 終端コード | server send 終端コード |
 |:-----------------------|:-----------------------|
@@ -444,3 +444,26 @@ yaskkserv2 では
 ような形式です。 `" "` (スペース)でターミネートされていることに注意が必要です。
 
 yaskkserv2 では未実装です。(ダミー文字列が返されます。)
+
+
+
+
+## License
+
+Licensed under either of
+
+ * Apache License, Version 2.0
+   ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license
+   ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
+
+
+
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
