@@ -184,6 +184,9 @@ impl DictionaryReader {
             )?;
             Candidates::remove_duplicates(&tmp_candidates)
         };
+        if google_utf8_candidates.is_empty() {
+            return Err(SkkError::Request);
+        }
         let mut new_result = Vec::with_capacity(RESULT_VEC_CAPACITY);
         {
             let base_candidates_bytes = Candidates::trim_one_slash(&result[1..]);
