@@ -172,7 +172,7 @@ impl DictionaryReader {
                 &self.google_suggest_protocol,
                 &utf8_midashi,
                 self.config.google_timeout_milliseconds,
-            )?);
+            ).unwrap_or_default());
             Candidates::remove_duplicates(&tmp_candidates)
         } else {
             let tmp_candidates = Request::request_google_japanese_input(
