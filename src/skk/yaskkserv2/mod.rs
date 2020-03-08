@@ -366,7 +366,9 @@ impl Yaskkserv2 {
                             Ok(0) => HandleClientResult::Exit,
                             Ok(size) => {
                                 let skip = Self::get_buffer_skip_count(&buffer, size);
-                                if size - skip > 0 {
+                                if size == skip {
+                                    HandleClientResult::Exit
+                                } else if size - skip > 0 {
                                     self.server.handle_client(
                                         &mut socket.buffer_stream,
                                         &mut dictionary_file,
@@ -395,7 +397,8 @@ impl Yaskkserv2 {
                                 }
                             }
                         } {
-                            HandleClientResult::Continue | HandleClientResult::Exit => {
+                            HandleClientResult::Continue => {}
+                            HandleClientResult::Exit => {
                                 poll.deregister(socket.buffer_stream.get_mut())?;
                                 if is_shutdown {
                                     if let Err(e) =
