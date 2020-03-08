@@ -395,8 +395,7 @@ impl Yaskkserv2 {
                                 }
                             }
                         } {
-                            HandleClientResult::Continue => {}
-                            HandleClientResult::Exit => {
+                            HandleClientResult::Continue | HandleClientResult::Exit => {
                                 poll.deregister(socket.buffer_stream.get_mut())?;
                                 if is_shutdown {
                                     if let Err(e) =
