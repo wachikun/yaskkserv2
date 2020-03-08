@@ -16,18 +16,39 @@ impl Request {
         }
     }
 
-    fn get_result(json: json::JsonValue, max_candidates_length: usize) -> Vec<Vec<u8>> {
+    fn get_google_japanese_input_result_2(json: json::JsonValue) -> Vec<Vec<u8>> {
         let mut result = Vec::new();
-        match json.len() {
-            2 => {
-                if let Some(midashi_tail) = Request::json_str_to_bytes(&json[1][0]) {
-                    for u_0 in json[0][1].members() {
-                        if let Some(b_0) = Request::json_str_to_bytes(u_0) {
-                            for u_1 in json[1][1].members() {
-                                if let Some(b_1) = Request::json_str_to_bytes(u_1) {
+        if let Some(midashi_tail) = Request::json_str_to_bytes(&json[1][0]) {
+            for u_0 in json[0][1].members() {
+                if let Some(b_0) = Request::json_str_to_bytes(u_0) {
+                    for u_1 in json[1][1].members() {
+                        if let Some(b_1) = Request::json_str_to_bytes(u_1) {
+                            let mut v = Vec::from(b_0);
+                            if !Request::is_okuri_midashi_tail(midashi_tail) {
+                                v.extend_from_slice(b_1);
+                            }
+                            result.push(v);
+                        }
+                    }
+                }
+            }
+        }
+        result
+    }
+
+    fn get_google_japanese_input_result_3(json: json::JsonValue) -> Vec<Vec<u8>> {
+        let mut result = Vec::new();
+        if let Some(midashi_tail) = Request::json_str_to_bytes(&json[2][0]) {
+            for u_0 in json[0][1].members() {
+                if let Some(b_0) = Request::json_str_to_bytes(u_0) {
+                    for u_1 in json[1][1].members() {
+                        if let Some(b_1) = Request::json_str_to_bytes(u_1) {
+                            for u_2 in json[2][1].members() {
+                                if let Some(b_2) = Request::json_str_to_bytes(u_2) {
                                     let mut v = Vec::from(b_0);
+                                    v.extend_from_slice(b_1);
                                     if !Request::is_okuri_midashi_tail(midashi_tail) {
-                                        v.extend_from_slice(b_1);
+                                        v.extend_from_slice(b_2);
                                     }
                                     result.push(v);
                                 }
@@ -36,18 +57,26 @@ impl Request {
                     }
                 }
             }
-            3 => {
-                if let Some(midashi_tail) = Request::json_str_to_bytes(&json[2][0]) {
-                    for u_0 in json[0][1].members() {
-                        if let Some(b_0) = Request::json_str_to_bytes(u_0) {
-                            for u_1 in json[1][1].members() {
-                                if let Some(b_1) = Request::json_str_to_bytes(u_1) {
-                                    for u_2 in json[2][1].members() {
-                                        if let Some(b_2) = Request::json_str_to_bytes(u_2) {
+        }
+        result
+    }
+
+    fn get_google_japanese_input_result_4(json: json::JsonValue) -> Vec<Vec<u8>> {
+        let mut result = Vec::new();
+        if let Some(midashi_tail) = Request::json_str_to_bytes(&json[3][0]) {
+            for u_0 in json[0][1].members() {
+                if let Some(b_0) = Request::json_str_to_bytes(u_0) {
+                    for u_1 in json[1][1].members() {
+                        if let Some(b_1) = Request::json_str_to_bytes(u_1) {
+                            for u_2 in json[2][1].members() {
+                                if let Some(b_2) = Request::json_str_to_bytes(u_2) {
+                                    for u_3 in json[3][1].members() {
+                                        if let Some(b_3) = Request::json_str_to_bytes(u_3) {
                                             let mut v = Vec::from(b_0);
                                             v.extend_from_slice(b_1);
+                                            v.extend_from_slice(b_2);
                                             if !Request::is_okuri_midashi_tail(midashi_tail) {
-                                                v.extend_from_slice(b_2);
+                                                v.extend_from_slice(b_3);
                                             }
                                             result.push(v);
                                         }
@@ -58,34 +87,19 @@ impl Request {
                     }
                 }
             }
-            4 => {
-                if let Some(midashi_tail) = Request::json_str_to_bytes(&json[3][0]) {
-                    for u_0 in json[0][1].members() {
-                        if let Some(b_0) = Request::json_str_to_bytes(u_0) {
-                            for u_1 in json[1][1].members() {
-                                if let Some(b_1) = Request::json_str_to_bytes(u_1) {
-                                    for u_2 in json[2][1].members() {
-                                        if let Some(b_2) = Request::json_str_to_bytes(u_2) {
-                                            for u_3 in json[3][1].members() {
-                                                if let Some(b_3) = Request::json_str_to_bytes(u_3) {
-                                                    let mut v = Vec::from(b_0);
-                                                    v.extend_from_slice(b_1);
-                                                    v.extend_from_slice(b_2);
-                                                    if !Request::is_okuri_midashi_tail(midashi_tail)
-                                                    {
-                                                        v.extend_from_slice(b_3);
-                                                    }
-                                                    result.push(v);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        }
+        result
+    }
+
+    fn get_google_japanese_input_result(
+        json: json::JsonValue,
+        max_candidates_length: usize,
+    ) -> Vec<Vec<u8>> {
+        let mut result = Vec::new();
+        match json.len() {
+            2 => result.extend_from_slice(&Request::get_google_japanese_input_result_2(json)),
+            3 => result.extend_from_slice(&Request::get_google_japanese_input_result_3(json)),
+            4 => result.extend_from_slice(&Request::get_google_japanese_input_result_4(json)),
             _ => {
                 for u in json[0][1].members() {
                     if let Some(bytes) = Request::json_str_to_bytes(u) {
@@ -118,7 +132,7 @@ impl Request {
         let json = json::parse(&content)?;
         let mut result = Vec::new();
         if json.is_array() && json[0].is_array() && (json[0].len() >= 2) {
-            result = Request::get_result(json, max_candidates_length);
+            result = Request::get_google_japanese_input_result(json, max_candidates_length);
         } else {
             Yaskkserv2::log_error(&format!("json error? json={:?}", json));
         }
