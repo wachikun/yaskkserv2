@@ -167,6 +167,9 @@ impl DictionaryReader {
                 &utf8_midashi,
                 self.config.google_timeout_milliseconds,
                 self.config.google_max_candidates_length,
+                self.config.google_insert_hiragana_only_candidate,
+                self.config.google_insert_katakana_only_candidate,
+                self.config.google_insert_hankaku_katakana_only_candidate,
             )
             .unwrap_or_default();
             tmp_candidates.extend(Request::request_google_suggest(
@@ -181,6 +184,9 @@ impl DictionaryReader {
                 &utf8_midashi,
                 self.config.google_timeout_milliseconds,
                 self.config.google_max_candidates_length,
+                self.config.google_insert_hiragana_only_candidate,
+                self.config.google_insert_katakana_only_candidate,
+                self.config.google_insert_hankaku_katakana_only_candidate,
             )?;
             Candidates::remove_duplicates(&tmp_candidates)
         };
