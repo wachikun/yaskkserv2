@@ -162,8 +162,8 @@ impl Yaskkserv2ConfigFile {
             };
             self.config.google_timing = timing;
         }
-        validate_and_set_config_google_bool!("google-use-http", is_use_http);
-        validate_and_set_config_google_bool!("google-suggest", is_enable_google_suggest);
+        validate_and_set_config_google_bool!("google-use-http", is_http_enabled);
+        validate_and_set_config_google_bool!("google-suggest", is_google_suggest_enabled);
         validate_and_set_config_google_bool!(
             "google-insert-hiragana-only-candidate",
             google_insert_hiragana_only_candidate

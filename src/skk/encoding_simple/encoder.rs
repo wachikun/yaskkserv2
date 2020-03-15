@@ -90,11 +90,11 @@ impl Encoder {
 
     #[inline(always)]
     pub(crate) fn is_candidate_combine_utf8_4(utf8_buffer: &[u8], utf8_i: usize) -> bool {
-        (utf8_buffer[utf8_i + 2] == 0xcc || utf8_buffer[utf8_i + 2] == 0xcb)
+        utf8_buffer[utf8_i + 2] == 0xcc || utf8_buffer[utf8_i + 2] == 0xcb
     }
 
     #[inline(always)]
     pub(crate) fn is_candidate_combine_utf8_6(utf8_buffer: &[u8], utf8_i: usize) -> bool {
-        (utf8_buffer[utf8_i + 4] == 0x82 && utf8_buffer[utf8_i + 5] == 0x9a)
+        utf8_buffer[utf8_i + 4] == 0x82 && utf8_buffer[utf8_i + 5] == 0x9a
     }
 }

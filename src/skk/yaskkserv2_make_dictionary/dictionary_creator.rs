@@ -113,16 +113,16 @@ impl DictionaryCreator {
     }
 
     // buffer 内の entry ("\nMIDASHI /CANDIDATES/\n") の最大長を取得する
-    fn get_maximum_entry_length(buffer: &[u8]) -> Result<usize, SkkError> {
+    fn get_max_entry_length(buffer: &[u8]) -> Result<usize, SkkError> {
         const SKIP_LF_LENGTH: usize = 1;
         let mut offset = 0;
-        let mut maximum_entry_length = 0;
+        let mut max_entry_length = 0;
         loop {
             // offset は先頭の "\n" を指しているので offset + SKIP_LF_LENGTH から終端の "\n" を探す
             if let Some(find) = twoway::find_bytes(&buffer[offset + SKIP_LF_LENGTH..], b"\n") {
                 let length = SKIP_LF_LENGTH + find + SKIP_LF_LENGTH;
-                if maximum_entry_length < length {
-                    maximum_entry_length = length;
+                if max_entry_length < length {
+                    max_entry_length = length;
                 }
                 if SKIP_LF_LENGTH + offset + find + SKIP_LF_LENGTH == buffer.len() {
                     break;
@@ -133,7 +133,7 @@ impl DictionaryCreator {
                 return Err(SkkError::JisyoRead);
             }
         }
-        Ok(maximum_entry_length)
+        Ok(max_entry_length)
     }
 
     fn get_dictionary_block_informations(
@@ -146,7 +146,7 @@ impl DictionaryCreator {
         // buffer に含まれる各 entry の前後には必ず b'\n' が含まれている。
         let block_buffer_length = block_buffer.len();
         let mut offset = 0;
-        let maximum_entry_length = Self::get_maximum_entry_length(block_buffer)?;
+        let max_entry_length = Self::get_max_entry_length(block_buffer)?;
         loop {
             let mut unit_length = DICTIONARY_BLOCK_UNIT_LENGTH;
             // offset は先頭の "\n" を指しているので、 midashi 部分を抽出するため space を探す
@@ -162,7 +162,7 @@ impl DictionaryCreator {
                     // 探すべき要素が見付からなかったということになるので unit_length を最大値で
                     // 補正。
                     if rfind == offset {
-                        unit_length = maximum_entry_length;
+                        unit_length = max_entry_length;
                         if block_buffer_length == unit_length {
                             is_break = true;
                         }

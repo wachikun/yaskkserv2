@@ -160,14 +160,14 @@ impl Yaskkserv2CommandLine {
     pub(in crate::skk) fn range_validator<T: std::str::FromStr + std::cmp::PartialOrd>(
         value: String,
         message: &str,
-        minimum: T,
-        maximum: T,
+        min: T,
+        max: T,
     ) -> Result<(), String> {
         value
             .parse::<T>()
             .map_err(|_| String::from(message))
             .and_then(|ok| {
-                if ok < minimum || ok > maximum {
+                if ok < min || ok > max {
                     Err(String::from(message))
                 } else {
                     Ok(())
@@ -215,7 +215,7 @@ impl Yaskkserv2CommandLine {
                 Self::parse_integer(milliseconds, 0, result_is_help_exit);
         }
         if let Some(full_path) = matches.value_of("google-cache-filename") {
-            self.config.is_use_google_cache = true;
+            self.config.is_google_cache_enabled = true;
             self.config.google_cache_full_path = String::from(full_path);
         }
         if let Some(entries) = matches.value_of("google-cache-entries") {
@@ -242,14 +242,14 @@ impl Yaskkserv2CommandLine {
             if self.config.google_timing == GoogleTiming::Disable {
                 *result_is_help_exit = true;
             } else {
-                self.config.is_use_http = true;
+                self.config.is_http_enabled = true;
             }
         }
         if matches.is_present("google-suggest") {
             if self.config.google_timing == GoogleTiming::Disable {
                 *result_is_help_exit = true;
             } else {
-                self.config.is_enable_google_suggest = true;
+                self.config.is_google_suggest_enabled = true;
             }
         }
     }

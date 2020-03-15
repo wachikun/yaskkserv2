@@ -125,9 +125,9 @@ pub(in crate::skk) struct Config {
     google_insert_hiragana_only_candidate: bool,
     google_insert_katakana_only_candidate: bool,
     google_insert_hankaku_katakana_only_candidate: bool,
-    is_use_http: bool,
-    is_use_google_cache: bool,
-    is_enable_google_suggest: bool,
+    is_http_enabled: bool,
+    is_google_cache_enabled: bool,
+    is_google_suggest_enabled: bool,
     encoding: Encoding,
     is_no_daemonize: bool,
     is_verbose: bool,
@@ -169,9 +169,9 @@ impl Config {
     define_builder!(google_cache_expire_seconds, u64);
     define_builder!(google_max_candidates_length, usize);
     define_builder!(max_server_completions, u32);
-    define_builder!(is_use_http, bool);
-    define_builder!(is_use_google_cache, bool);
-    define_builder!(is_enable_google_suggest, bool);
+    define_builder!(is_http_enabled, bool);
+    define_builder!(is_google_cache_enabled, bool);
+    define_builder!(is_google_suggest_enabled, bool);
     define_builder!(encoding, Encoding);
     define_builder!(is_no_daemonize, bool);
     define_builder!(is_verbose, bool);

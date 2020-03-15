@@ -276,8 +276,8 @@ impl ConnectSendCompare {
         if buffer[0] == b'4' {
             return;
         }
-        let minimum_length = b"1/a/\n".len();
-        assert!(size >= minimum_length);
+        let min_length = b"1/a/\n".len();
+        assert!(size >= min_length);
         assert!(buffer[0] == b'1');
         assert!(buffer[1] == b'/');
         assert!(buffer[size - 2] == b'/');

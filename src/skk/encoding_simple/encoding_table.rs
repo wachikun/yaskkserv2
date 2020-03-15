@@ -231,13 +231,13 @@ impl EncodingTable {
                 }
             }
             C_LENGTH => {
-                (if let Ok(ok) = u32::from_str_radix(&unicode_code[2..6], 16) {
+                if let Ok(ok) = u32::from_str_radix(&unicode_code[2..6], 16) {
                     Self::convert_unicode_to_utf8(ok, &mut result_utf8_8[..4]);
                     if let Ok(ok) = u32::from_str_radix(&unicode_code[7..11], 16) {
                         Self::convert_unicode_to_utf8(ok, &mut result_utf8_8[4..4 + 4]);
                         *is_combine = true;
                     }
-                })
+                }
             }
             _ => {
                 return Err(SkkError::Encoding);
