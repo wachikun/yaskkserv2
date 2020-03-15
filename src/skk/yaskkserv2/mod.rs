@@ -15,6 +15,7 @@ mod request;
 mod server;
 
 pub(in crate::skk) mod command_line;
+pub(in crate::skk) mod config_file;
 
 #[cfg(test)]
 pub(in crate::skk) mod test_unix;
