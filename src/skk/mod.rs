@@ -41,6 +41,7 @@ const DICTIONARY_VERSION: u32 = 1;
 const DEFAULT_PORT: i32 = 1178;
 const DEFAULT_MAX_CONNECTIONS: i32 = 16;
 const DEFAULT_LISTEN_ADDRESS: &str = "0.0.0.0";
+const DEFAULT_CONFIG_FULL_PATH: &str = "/etc/yaskkserv2.conf";
 const DEFAULT_HOSTNAME_AND_IP_ADDRESS_FOR_PROTOCOL_3: &str = "localhost:127.0.0.1";
 const DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS: u64 = 1000;
 const DEFAULT_GOOGLE_CACHE_FULL_PATH: &str = "/tmp/yaskkserv2.google_cache";
@@ -113,6 +114,7 @@ pub(in crate::skk) struct Config {
     listen_address: String,
     hostname_and_ip_address_for_protocol_3: String,
     dictionary_full_path: String,
+    config_full_path: String,
     google_timeout_milliseconds: u64,
     google_timing: GoogleTiming,
     google_cache_full_path: String,
@@ -143,6 +145,7 @@ impl Config {
                 DEFAULT_HOSTNAME_AND_IP_ADDRESS_FOR_PROTOCOL_3,
             ),
             dictionary_full_path: String::new(),
+            config_full_path: String::from(DEFAULT_CONFIG_FULL_PATH),
             google_timeout_milliseconds: DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS,
             google_timing: GoogleTiming::NotFound,
             google_cache_full_path: String::from(DEFAULT_GOOGLE_CACHE_FULL_PATH),
@@ -556,7 +559,10 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
         return Ok(());
     }
     let mut core = Yaskkserv2::new();
-    let config = command_line.get_config();
+    let command_line_config = command_line.get_config();
+    let mut config_file = yaskkserv2::config_file::Yaskkserv2ConfigFile::new(&command_line_config);
+    config_file.read()?;
+    let config = config_file.get_config();
     core.setup(&config)?;
     if config.is_no_daemonize {
         core.run();
