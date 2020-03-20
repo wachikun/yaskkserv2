@@ -35,7 +35,7 @@ impl Yaskkserv2CommandLine {
         let default_max_server_completions = &DEFAULT_MAX_SERVER_COMPLETIONS.to_string();
         let mut app = app_from_crate!()
             .setting(clap::AppSettings::DeriveDisplayOrder)
-            .arg(clap::Arg::from_usage("<dictionary> 'dictionary'")
+            .arg(clap::Arg::from_usage("[dictionary] 'dictionary'")
                  .validator(Self::dictionary_validator))
             .arg(clap::Arg::from_usage(&config_arg))
             .arg(clap::Arg::from_usage("--no-daemonize 'do not daemonize'"))
@@ -84,7 +84,7 @@ impl Yaskkserv2CommandLine {
         Ok(result_is_help_exit || result_is_exit)
     }
 
-    fn dictionary_validator(value: String) -> Result<(), String> {
+    pub(in crate::skk) fn dictionary_validator(value: String) -> Result<(), String> {
         if !std::path::Path::new(&value).exists() {
             Err(format!(r#"dictionary "{}" not found"#, &value))
         } else {

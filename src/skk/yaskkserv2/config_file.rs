@@ -42,7 +42,8 @@ impl Yaskkserv2ConfigFile {
                 candidates.insert(String::from(&m[1]), String::from(&m[2]));
             }
         }
-        if self.validate_and_set_config(&candidates).is_err() {
+        if let Err(e) = self.validate_and_set_config(&candidates) {
+            println!("{}", e);
             return Err(SkkError::CommandLine);
         }
         Ok(())
@@ -84,6 +85,12 @@ impl Yaskkserv2ConfigFile {
             };
         }
 
+        let key = "dictionary";
+        if candidates.contains_key(key) && self.config.dictionary_full_path.is_empty() {
+            let tmp = candidates[key].to_owned();
+            yaskkserv2::command_line::Yaskkserv2CommandLine::dictionary_validator(tmp.to_owned())?;
+            self.config.dictionary_full_path = tmp;
+        }
         let key = "port";
         if candidates.contains_key(key) && self.config.port == self.default_config.port {
             let tmp = candidates[key].to_owned();
