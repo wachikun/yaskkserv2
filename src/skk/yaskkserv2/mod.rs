@@ -15,6 +15,7 @@ mod request;
 mod server;
 
 pub(in crate::skk) mod command_line;
+pub(in crate::skk) mod config_file;
 
 #[cfg(test)]
 pub(in crate::skk) mod test_unix;
@@ -220,7 +221,7 @@ impl Yaskkserv2 {
     }
 
     pub(in crate::skk) fn setup(&mut self, config: &Config) -> Result<(), SkkError> {
-        if config.is_use_google_cache {
+        if config.is_google_cache_enabled {
             GoogleCache::setup_use_rwlock_internally(&config.google_cache_full_path)?;
         }
         self.server.setup(

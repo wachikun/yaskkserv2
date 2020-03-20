@@ -15,7 +15,7 @@ impl DictionaryReader {
     pub(in crate::skk) fn setup(&mut self, config: Config, on_memory: OnMemory) {
         self.config = config;
         self.on_memory = on_memory;
-        if self.config.is_use_http {
+        if self.config.is_http_enabled {
             self.google_japanese_input_protocol = String::from("http");
             self.google_suggest_protocol = String::from("http");
         }
@@ -154,18 +154,22 @@ impl DictionaryReader {
             Yaskkserv2::log_error(&format!("{}", e));
             Err(e)
         })?;
-        let cached_google_utf8_candidates = if self.config.is_use_google_cache {
+        let cached_google_utf8_candidates = if self.config.is_google_cache_enabled {
             GoogleCache::get_candidates(&utf8_midashi)
         } else {
             Vec::new()
         };
         let google_utf8_candidates = if !cached_google_utf8_candidates.is_empty() {
             cached_google_utf8_candidates
-        } else if self.config.is_enable_google_suggest {
+        } else if self.config.is_google_suggest_enabled {
             let mut tmp_candidates: Vec<Vec<u8>> = Request::request_google_japanese_input(
                 &self.google_japanese_input_protocol,
                 &utf8_midashi,
                 self.config.google_timeout_milliseconds,
+                self.config.google_max_candidates_length,
+                self.config.google_insert_hiragana_only_candidate,
+                self.config.google_insert_katakana_only_candidate,
+                self.config.google_insert_hankaku_katakana_only_candidate,
             )
             .unwrap_or_default();
             tmp_candidates.extend(Request::request_google_suggest(
@@ -179,9 +183,16 @@ impl DictionaryReader {
                 &self.google_japanese_input_protocol,
                 &utf8_midashi,
                 self.config.google_timeout_milliseconds,
+                self.config.google_max_candidates_length,
+                self.config.google_insert_hiragana_only_candidate,
+                self.config.google_insert_katakana_only_candidate,
+                self.config.google_insert_hankaku_katakana_only_candidate,
             )?;
             Candidates::remove_duplicates(&tmp_candidates)
         };
+        if google_utf8_candidates.is_empty() {
+            return Err(SkkError::Request);
+        }
         let mut new_result = Vec::with_capacity(RESULT_VEC_CAPACITY);
         {
             let base_candidates_bytes = Candidates::trim_one_slash(&result[1..]);
@@ -213,7 +224,7 @@ impl DictionaryReader {
             }
         }
         *result = new_result;
-        if self.config.is_use_google_cache {
+        if self.config.is_google_cache_enabled {
             GoogleCache::write_candidates(
                 &utf8_midashi,
                 &google_utf8_candidates,

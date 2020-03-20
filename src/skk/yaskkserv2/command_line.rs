@@ -21,16 +21,23 @@ impl Yaskkserv2CommandLine {
     pub(in crate::skk) fn start(&mut self) -> Result<bool, SkkError> {
         let mut result_is_help_exit = false;
         let mut result_is_exit = false;
+        let config_arg = format!(
+            "--config-filename=[FILENAME] 'config filename (default: {})'",
+            DEFAULT_CONFIG_FULL_PATH
+        );
         let default_port = &DEFAULT_PORT.to_string();
         let default_max_connections = &DEFAULT_MAX_CONNECTIONS.to_string();
         let default_google_timeout_milliseconds = &DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS.to_string();
         let default_google_cache_entries = &DEFAULT_GOOGLE_CACHE_ENTRIES.to_string();
         let default_google_cache_expire_seconds = &DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS.to_string();
+        let default_google_max_candidates_length =
+            &DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH.to_string();
         let default_max_server_completions = &DEFAULT_MAX_SERVER_COMPLETIONS.to_string();
         let mut app = app_from_crate!()
             .setting(clap::AppSettings::DeriveDisplayOrder)
-            .arg(clap::Arg::from_usage("<dictionary> 'dictionary'")
+            .arg(clap::Arg::from_usage("[dictionary] 'dictionary'")
                  .validator(Self::dictionary_validator))
+            .arg(clap::Arg::from_usage(&config_arg))
             .arg(clap::Arg::from_usage("--no-daemonize 'do not daemonize'"))
             .arg(clap::Arg::from_usage("--port=[PORT] 'port number'")
                  .validator(Self::port_validator)
@@ -54,6 +61,9 @@ impl Yaskkserv2CommandLine {
             .arg(clap::Arg::from_usage("--google-cache-expire-seconds=[SECONDS] 'google cache expire seconds'")
                  .validator(Self::google_cache_expire_seconds_validator)
                  .default_value(&default_google_cache_expire_seconds))
+            .arg(clap::Arg::from_usage("--google-max-candidates-length=[LENGTH] 'google max candidates length'")
+                 .validator(Self::google_max_candidates_length_validator)
+                 .default_value(&default_google_max_candidates_length))
             .arg(clap::Arg::from_usage("--max-server-completions=[MAX] 'max server completions'")
                  .validator(Self::max_server_completions_validator)
                  .default_value(&default_max_server_completions))
@@ -74,7 +84,7 @@ impl Yaskkserv2CommandLine {
         Ok(result_is_help_exit || result_is_exit)
     }
 
-    fn dictionary_validator(value: String) -> Result<(), String> {
+    pub(in crate::skk) fn dictionary_validator(value: String) -> Result<(), String> {
         if !std::path::Path::new(&value).exists() {
             Err(format!(r#"dictionary "{}" not found"#, &value))
         } else {
@@ -82,11 +92,11 @@ impl Yaskkserv2CommandLine {
         }
     }
 
-    fn port_validator(val: String) -> Result<(), String> {
+    pub(in crate::skk) fn port_validator(val: String) -> Result<(), String> {
         Self::range_validator::<i32>(val, "illegal port number", 0, 65535)
     }
 
-    fn max_connections_validator(val: String) -> Result<(), String> {
+    pub(in crate::skk) fn max_connections_validator(val: String) -> Result<(), String> {
         Self::range_validator::<i32>(
             val,
             "illegal max connection range",
@@ -95,7 +105,7 @@ impl Yaskkserv2CommandLine {
         )
     }
 
-    fn listen_address_validator(val: String) -> Result<(), String> {
+    pub(in crate::skk) fn listen_address_validator(val: String) -> Result<(), String> {
         if val.parse::<std::net::IpAddr>().is_ok() {
             Ok(())
         } else {
@@ -103,7 +113,9 @@ impl Yaskkserv2CommandLine {
         }
     }
 
-    fn hostname_and_ip_address_address_validator(val: String) -> Result<(), String> {
+    pub(in crate::skk) fn hostname_and_ip_address_address_validator(
+        val: String,
+    ) -> Result<(), String> {
         let re_ascii = Regex::new(r"^[\x21-\x7e]+$").unwrap();
         if re_ascii.is_match(&val) {
             Ok(())
@@ -112,23 +124,29 @@ impl Yaskkserv2CommandLine {
         }
     }
 
-    fn google_timeout_milliseconds_validator(val: String) -> Result<(), String> {
+    pub(in crate::skk) fn google_timeout_milliseconds_validator(val: String) -> Result<(), String> {
         Self::range_validator::<u64>(val, "illegal timeout milliseconds", 0, 5 * 60 * 1000)
     }
 
-    fn google_cache_entries_validator(val: String) -> Result<(), String> {
+    pub(in crate::skk) fn google_cache_entries_validator(val: String) -> Result<(), String> {
         Self::range_validator::<usize>(val, "illegal cache entries", 1, 1024 * 1024)
     }
 
-    fn google_cache_expire_seconds_validator(val: String) -> Result<(), String> {
+    pub(in crate::skk) fn google_cache_expire_seconds_validator(val: String) -> Result<(), String> {
         Self::range_validator::<u64>(val, "illegal expire seconds", 1, 100 * 365 * 24 * 60 * 60)
     }
 
-    fn max_server_completions_validator(val: String) -> Result<(), String> {
+    pub(in crate::skk) fn google_max_candidates_length_validator(
+        val: String,
+    ) -> Result<(), String> {
+        Self::range_validator::<u64>(val, "illegal candidates length", 1, 1024)
+    }
+
+    pub(in crate::skk) fn max_server_completions_validator(val: String) -> Result<(), String> {
         Self::range_validator::<i32>(val, "illegal max server completions", 1, 64 * 1024)
     }
 
-    fn parse_integer<T: std::str::FromStr>(
+    pub(in crate::skk) fn parse_integer<T: std::str::FromStr>(
         value: &str,
         fail_value: T,
         is_help_exit: &mut bool,
@@ -139,17 +157,17 @@ impl Yaskkserv2CommandLine {
         })
     }
 
-    fn range_validator<T: std::str::FromStr + std::cmp::PartialOrd>(
+    pub(in crate::skk) fn range_validator<T: std::str::FromStr + std::cmp::PartialOrd>(
         value: String,
         message: &str,
-        minimum: T,
-        maximum: T,
+        min: T,
+        max: T,
     ) -> Result<(), String> {
         value
             .parse::<T>()
             .map_err(|_| String::from(message))
             .and_then(|ok| {
-                if ok < minimum || ok > maximum {
+                if ok < min || ok > max {
                     Err(String::from(message))
                 } else {
                     Ok(())
@@ -169,6 +187,9 @@ impl Yaskkserv2CommandLine {
         if matches.is_present("version") {
             println!("{}", PKG_VERSION);
             *result_is_exit = true;
+        }
+        if let Some(full_path) = matches.value_of("config-filename") {
+            self.config.config_full_path = String::from(full_path);
         }
         if matches.is_present("no-daemonize") {
             self.config.is_no_daemonize = true;
@@ -194,7 +215,7 @@ impl Yaskkserv2CommandLine {
                 Self::parse_integer(milliseconds, 0, result_is_help_exit);
         }
         if let Some(full_path) = matches.value_of("google-cache-filename") {
-            self.config.is_use_google_cache = true;
+            self.config.is_google_cache_enabled = true;
             self.config.google_cache_full_path = String::from(full_path);
         }
         if let Some(entries) = matches.value_of("google-cache-entries") {
@@ -221,14 +242,14 @@ impl Yaskkserv2CommandLine {
             if self.config.google_timing == GoogleTiming::Disable {
                 *result_is_help_exit = true;
             } else {
-                self.config.is_use_http = true;
+                self.config.is_http_enabled = true;
             }
         }
         if matches.is_present("google-suggest") {
             if self.config.google_timing == GoogleTiming::Disable {
                 *result_is_help_exit = true;
             } else {
-                self.config.is_enable_google_suggest = true;
+                self.config.is_google_suggest_enabled = true;
             }
         }
     }

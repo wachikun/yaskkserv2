@@ -113,7 +113,7 @@ fn test_abbrev(port: &str, encoding: Encoding) {
     thread_handle.join().unwrap();
 }
 
-fn test_dictionary_notfound_google_found(name: &str, port: &str, is_enable_google_suggest: bool) {
+fn test_dictionary_notfound_google_found(name: &str, port: &str, is_google_suggest_enabled: bool) {
     fn is_consecutive_slashes(buffer: &[u8]) -> bool {
         let mut previous = 0;
         for current in buffer {
@@ -128,7 +128,7 @@ fn test_dictionary_notfound_google_found(name: &str, port: &str, is_enable_googl
     let config = Config::new()
         .port(String::from(port))
         .dictionary_full_path(Path::get_full_path_yaskkserv2_dictionary(Encoding::Utf8))
-        .is_enable_google_suggest(is_enable_google_suggest);
+        .is_google_suggest_enabled(is_google_suggest_enabled);
     let threads = 1;
     let thread_handle = run_and_wait_simple_server(&config, get_take_count(threads));
     match TcpStream::connect(format!("localhost:{}", port)) {
@@ -198,15 +198,15 @@ fn yaskkserv2_abbrev_utf8_test() {
 #[test]
 fn yaskkserv2_dictionary_notfound_google_found_test() {
     let name = "yaskkserv2_dictionary_notfound_google_found";
-    let is_enable_google_suggest = false;
-    test_dictionary_notfound_google_found(name, "12600", is_enable_google_suggest);
+    let is_google_suggest_enabled = false;
+    test_dictionary_notfound_google_found(name, "12600", is_google_suggest_enabled);
 }
 
 #[test]
 fn yaskkserv2_dictionary_notfound_google_found_enable_google_suggest_test() {
     let name = "yaskkserv2_dictionary_notfound_google_found_enable_google_suggest";
-    let is_enable_google_suggest = true;
-    test_dictionary_notfound_google_found(name, "12601", is_enable_google_suggest);
+    let is_google_suggest_enabled = true;
+    test_dictionary_notfound_google_found(name, "12601", is_google_suggest_enabled);
 }
 
 struct MaxConnections {}

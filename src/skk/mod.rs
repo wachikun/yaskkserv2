@@ -41,11 +41,13 @@ const DICTIONARY_VERSION: u32 = 1;
 const DEFAULT_PORT: i32 = 1178;
 const DEFAULT_MAX_CONNECTIONS: i32 = 16;
 const DEFAULT_LISTEN_ADDRESS: &str = "0.0.0.0";
+const DEFAULT_CONFIG_FULL_PATH: &str = "/etc/yaskkserv2.conf";
 const DEFAULT_HOSTNAME_AND_IP_ADDRESS_FOR_PROTOCOL_3: &str = "localhost:127.0.0.1";
 const DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS: u64 = 1000;
 const DEFAULT_GOOGLE_CACHE_FULL_PATH: &str = "/tmp/yaskkserv2.google_cache";
 const DEFAULT_GOOGLE_CACHE_ENTRIES: usize = 1024;
 const DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS: u64 = 30 * 24 * 60 * 60;
+const DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH: usize = 5 * 5;
 const DEFAULT_MAX_SERVER_COMPLETIONS: u32 = 64;
 const GOOGLE_JAPANESE_INPUT_URL: &str = "://www.google.com/transliterate?langpair=ja-Hira|ja&text=";
 const GOOGLE_SUGGEST_URL: &str = "://www.google.com/complete/search?hl=ja&output=toolbar&q=";
@@ -112,15 +114,20 @@ pub(in crate::skk) struct Config {
     listen_address: String,
     hostname_and_ip_address_for_protocol_3: String,
     dictionary_full_path: String,
+    config_full_path: String,
     google_timeout_milliseconds: u64,
     google_timing: GoogleTiming,
     google_cache_full_path: String,
     google_cache_entries: usize,
     google_cache_expire_seconds: u64,
+    google_max_candidates_length: usize,
     max_server_completions: u32,
-    is_use_http: bool,
-    is_use_google_cache: bool,
-    is_enable_google_suggest: bool,
+    google_insert_hiragana_only_candidate: bool,
+    google_insert_katakana_only_candidate: bool,
+    google_insert_hankaku_katakana_only_candidate: bool,
+    is_http_enabled: bool,
+    is_google_cache_enabled: bool,
+    is_google_suggest_enabled: bool,
     encoding: Encoding,
     is_no_daemonize: bool,
     is_verbose: bool,
@@ -138,11 +145,13 @@ impl Config {
                 DEFAULT_HOSTNAME_AND_IP_ADDRESS_FOR_PROTOCOL_3,
             ),
             dictionary_full_path: String::new(),
+            config_full_path: String::from(DEFAULT_CONFIG_FULL_PATH),
             google_timeout_milliseconds: DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS,
             google_timing: GoogleTiming::NotFound,
             google_cache_full_path: String::from(DEFAULT_GOOGLE_CACHE_FULL_PATH),
             google_cache_entries: DEFAULT_GOOGLE_CACHE_ENTRIES,
             google_cache_expire_seconds: DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS,
+            google_max_candidates_length: DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH,
             max_server_completions: DEFAULT_MAX_SERVER_COMPLETIONS,
             ..Default::default()
         }
@@ -158,10 +167,11 @@ impl Config {
     define_builder!(google_cache_full_path, String);
     define_builder!(google_cache_entries, usize);
     define_builder!(google_cache_expire_seconds, u64);
+    define_builder!(google_max_candidates_length, usize);
     define_builder!(max_server_completions, u32);
-    define_builder!(is_use_http, bool);
-    define_builder!(is_use_google_cache, bool);
-    define_builder!(is_enable_google_suggest, bool);
+    define_builder!(is_http_enabled, bool);
+    define_builder!(is_google_cache_enabled, bool);
+    define_builder!(is_google_suggest_enabled, bool);
     define_builder!(encoding, Encoding);
     define_builder!(is_no_daemonize, bool);
     define_builder!(is_verbose, bool);
@@ -549,7 +559,10 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
         return Ok(());
     }
     let mut core = Yaskkserv2::new();
-    let config = command_line.get_config();
+    let command_line_config = command_line.get_config();
+    let mut config_file = yaskkserv2::config_file::Yaskkserv2ConfigFile::new(&command_line_config);
+    config_file.read()?;
+    let config = config_file.get_config();
     core.setup(&config)?;
     if config.is_no_daemonize {
         core.run();
