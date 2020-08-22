@@ -566,13 +566,13 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
     config_file.read()?;
     let config = config_file.get_config();
     core.setup(&config)?;
-    run_yaskkserv2_impl(&mut core);
+    run_yaskkserv2_impl(&mut core, config.is_no_daemonize);
     Ok(())
 }
 
 #[cfg(unix)]
-fn run_yaskkserv2_impl(core: &mut Yaskkserv2){
-    if config.is_no_daemonize {
+fn run_yaskkserv2_impl(core: &mut Yaskkserv2, is_no_daemonize: bool){
+    if is_no_daemonize {
         core.run();
     } else {
         let daemonize = Daemonize::new();
@@ -585,7 +585,7 @@ fn run_yaskkserv2_impl(core: &mut Yaskkserv2){
 }
 
 #[cfg(not(unix))]
-fn run_yaskkserv2_impl(core: &mut Yaskkserv2){
+fn run_yaskkserv2_impl(core: &mut Yaskkserv2, _is_no_daemonize: bool){
     core.run();
 }
 
