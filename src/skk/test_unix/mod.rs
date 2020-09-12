@@ -431,7 +431,10 @@ impl ConnectSendCompare {
         match TcpStream::connect(format!("localhost:{}", self.port)) {
             Ok(stream) => {
                 const READ_TIMEOUT_SECS: u64 = 1;
-                const TEST_LOOP: usize = 1000;
+                // TEST_LOOP を大きな値にすると Resource temporarily unavailable が発生し、
+                // stream が使えなくなるので控え目な値にしていることに注意。
+                // 本来はテストサーバ側に timeout など、適切な対策を入れる必要がある。
+                const TEST_LOOP: usize = 64;
                 println!("connected!  {}  port={}", self.name, self.port);
                 stream
                     .set_read_timeout(Some(std::time::Duration::from_secs(READ_TIMEOUT_SECS)))
