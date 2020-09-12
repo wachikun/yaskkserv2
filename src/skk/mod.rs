@@ -9,7 +9,9 @@ mod yaskkserv2_make_dictionary;
 #[cfg(test)]
 mod test_unix;
 
+#[cfg(unix)]
 use daemonize::Daemonize;
+
 use rustc_hash::{FxHashMap, FxHashSet};
 use sha1::Sha1;
 use std::convert::TryInto;
@@ -564,7 +566,13 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
     config_file.read()?;
     let config = config_file.get_config();
     core.setup(&config)?;
-    if config.is_no_daemonize {
+    run_yaskkserv2_impl(&mut core, config.is_no_daemonize);
+    Ok(())
+}
+
+#[cfg(unix)]
+fn run_yaskkserv2_impl(core: &mut Yaskkserv2, is_no_daemonize: bool){
+    if is_no_daemonize {
         core.run();
     } else {
         let daemonize = Daemonize::new();
@@ -573,7 +581,12 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
             Err(e) => println!("Error: {}", e),
         }
     }
-    Ok(())
+
+}
+
+#[cfg(not(unix))]
+fn run_yaskkserv2_impl(core: &mut Yaskkserv2, _is_no_daemonize: bool){
+    core.run();
 }
 
 #[allow(dead_code)]

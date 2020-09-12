@@ -28,13 +28,16 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek, Write};
 use std::net::Shutdown;
 use std::sync::RwLock;
-#[cfg(not(test))]
+#[cfg(all(not(test), unix))]
 use syslog::{Facility, Formatter3164};
+#[cfg(all(not(test), not(unix)))]
+use log::*;
 
 use crate::skk::*;
 
 #[cfg(test)]
 use crate::skk::test_unix::DEBUG_FORCE_EXIT_DIRECTORY;
+
 #[cfg(test)]
 use crate::skk::yaskkserv2::server::test_unix::ServerDebug;
 
@@ -463,7 +466,7 @@ impl Yaskkserv2 {
         println!("Warning: {}", message);
     }
 
-    #[cfg(not(test))]
+    #[cfg(all(not(test), unix))]
     fn get_log_formatter() -> Formatter3164 {
         Formatter3164 {
             facility: Facility::LOG_DAEMON,
@@ -478,7 +481,7 @@ impl Yaskkserv2 {
         println!("Error: {}", message);
     }
 
-    #[cfg(not(test))]
+    #[cfg(all(not(test), unix))]
     fn log_error(message: &str) {
         match syslog::unix(Self::get_log_formatter()) {
             Err(e) => println!("impossible to connect to syslog: {:?}", e),
@@ -488,12 +491,17 @@ impl Yaskkserv2 {
         }
     }
 
+    #[cfg(all(not(test), not(unix)))]
+    fn log_error(message: &str) {
+        error!("{}", message);
+    }
+
     #[cfg(test)]
     fn log_info(message: &str) {
         println!("Info: {}", message);
     }
 
-    #[cfg(not(test))]
+    #[cfg(all(not(test), unix))]
     fn log_info(message: &str) {
         match syslog::unix(Self::get_log_formatter()) {
             Err(e) => println!("impossible to connect to syslog: {:?}", e),
@@ -501,6 +509,11 @@ impl Yaskkserv2 {
                 writer.info(message).expect("could not send message");
             }
         }
+    }
+
+    #[cfg(all(not(test), not(unix)))]
+    fn log_info(message: &str) {
+        info!("{}", message);
     }
 }
 
