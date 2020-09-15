@@ -31,7 +31,7 @@ macro_rules! define_builder {
             self.$name = $name;
             self
         }
-    }
+    };
 }
 
 const DICTIONARY_FIXED_HEADER_AREA_LENGTH: u32 = 256;
@@ -570,7 +570,7 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
 }
 
 #[cfg(unix)]
-fn run_yaskkserv2_impl(core: &mut Yaskkserv2, is_no_daemonize: bool){
+fn run_yaskkserv2_impl(core: &mut Yaskkserv2, is_no_daemonize: bool) {
     if is_no_daemonize {
         core.run();
     } else {
@@ -580,11 +580,10 @@ fn run_yaskkserv2_impl(core: &mut Yaskkserv2, is_no_daemonize: bool){
             Err(e) => println!("Error: {}", e),
         }
     }
-
 }
 
 #[cfg(not(unix))]
-fn run_yaskkserv2_impl(core: &mut Yaskkserv2, _is_no_daemonize: bool){
+fn run_yaskkserv2_impl(core: &mut Yaskkserv2, _is_no_daemonize: bool) {
     core.run();
 }
 

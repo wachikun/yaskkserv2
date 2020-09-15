@@ -172,11 +172,14 @@ impl DictionaryReader {
                 self.config.google_insert_hankaku_katakana_only_candidate,
             )
             .unwrap_or_default();
-            tmp_candidates.extend(Request::request_google_suggest(
-                &self.google_suggest_protocol,
-                &utf8_midashi,
-                self.config.google_timeout_milliseconds,
-            ).unwrap_or_default());
+            tmp_candidates.extend(
+                Request::request_google_suggest(
+                    &self.google_suggest_protocol,
+                    &utf8_midashi,
+                    self.config.google_timeout_milliseconds,
+                )
+                .unwrap_or_default(),
+            );
             Candidates::remove_duplicates(&tmp_candidates)
         } else {
             let tmp_candidates = Request::request_google_japanese_input(

@@ -20,6 +20,8 @@ pub(in crate::skk) mod config_file;
 #[cfg(test)]
 pub(in crate::skk) mod test_unix;
 
+#[cfg(all(not(test), not(unix)))]
+use log::*;
 use mio::tcp::{TcpListener, TcpStream};
 use mio::{Events, Poll, PollOpt, Ready, Token};
 use regex::Regex;
@@ -30,8 +32,6 @@ use std::net::Shutdown;
 use std::sync::RwLock;
 #[cfg(all(not(test), unix))]
 use syslog::{Facility, Formatter3164};
-#[cfg(all(not(test), not(unix)))]
-use log::*;
 
 use crate::skk::*;
 
