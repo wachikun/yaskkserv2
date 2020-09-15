@@ -19,6 +19,7 @@ serde = "1.0.101"
 serde_derive = "1.0.101"
 sha1 = "0.6.0"
 tempfile = "3.1.0"
+thiserror = "1.0.20"
 twoway = "0.2.0"
 url = "1.7.2"
 # for test
