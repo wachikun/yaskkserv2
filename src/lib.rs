@@ -1,6 +1,5 @@
 #![warn(rust_2018_idioms)]
 #![warn(clippy::redundant_clone)]
-
 #![cfg_attr(feature = "benchmark", feature(test))]
 
 #[cfg(all(feature = "benchmark", test))]

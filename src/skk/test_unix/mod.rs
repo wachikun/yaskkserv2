@@ -247,7 +247,10 @@ impl ConnectSendCompare {
             if self.encoding == Encoding::Euc {
                 println!(
                     r#"euc candidates compare error  midashi="{:?}"(0x{:x?})  jisyo="{:x?}"  result="{:x?}""#,
-                    String::from_utf8(decoded_midashi.clone()), decoded_midashi, candidates_compare, result
+                    String::from_utf8(decoded_midashi.clone()),
+                    decoded_midashi,
+                    candidates_compare,
+                    result
                 );
                 let decoded_jisyo = encoding_simple::Euc::decode(&candidates_compare).unwrap();
                 let decoded_result = encoding_simple::Euc::decode(&result).unwrap();
@@ -259,7 +262,10 @@ impl ConnectSendCompare {
             } else {
                 println!(
                     r#"utf8 candidates compare error  midashi="{:?}"(0x{:x?})  jisyo="{:x?}"  result="{:x?}""#,
-                    String::from_utf8(decoded_midashi.clone()), midashi, candidates_compare, result
+                    String::from_utf8(decoded_midashi.clone()),
+                    midashi,
+                    candidates_compare,
+                    result
                 );
                 println!(
                     r#"jisyo="{:?}"  result="{:?}""#,

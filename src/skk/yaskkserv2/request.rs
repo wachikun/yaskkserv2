@@ -1,6 +1,7 @@
 use crate::skk::yaskkserv2::*;
 
 impl Request {
+    #[allow(clippy::needless_bool)]
     fn is_utf8_hiragana(letter: [u8; 3]) -> bool {
         if letter[0] != 0xe3 {
             return false;
@@ -25,6 +26,7 @@ impl Request {
         }
     }
 
+    #[allow(clippy::needless_bool)]
     fn is_utf8_katakana(letter: [u8; 3]) -> bool {
         if letter[0] != 0xe3 {
             return false;
@@ -49,6 +51,7 @@ impl Request {
         }
     }
 
+    #[allow(clippy::needless_bool)]
     fn is_utf8_hankaku_katakana(letter: [u8; 3]) -> bool {
         if letter[0] != 0xef {
             return false;
@@ -326,18 +329,18 @@ impl Request {
             timeout,
         )?;
         let json = json::parse(&content)?;
-        let mut result = Vec::new();
-        if json.is_array() && json[0].is_array() && (json[0].len() >= 2) {
-            result = Request::get_google_japanese_input_result(
+        let result = if json.is_array() && json[0].is_array() && (json[0].len() >= 2) {
+            Request::get_google_japanese_input_result(
                 json,
                 max_candidates_length,
                 is_insert_hiragana_only_candidate,
                 is_insert_katakana_only_candidate,
                 is_insert_hankaku_katakana_only_candidate,
-            );
+            )
         } else {
             Yaskkserv2::log_error(&format!("json error? json={:?}", json));
-        }
+            Vec::new()
+        };
         if result.is_empty() {
             Err(SkkError::Request)
         } else {
