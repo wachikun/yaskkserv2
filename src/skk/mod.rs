@@ -17,7 +17,6 @@ use sha1::Sha1;
 use std::convert::TryInto;
 use std::fs::File;
 use std::io::{Read, Seek};
-use twoway;
 
 use crate::skk::yaskkserv2::Yaskkserv2;
 use crate::skk::yaskkserv2_make_dictionary::Yaskkserv2MakeDictionary;
