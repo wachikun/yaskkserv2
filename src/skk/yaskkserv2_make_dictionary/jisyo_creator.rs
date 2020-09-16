@@ -58,13 +58,16 @@ impl JisyoCreator {
                 .skip(EXPIRE_SECONDS_SKIP_LENGTH)
                 .flat_map(|v| Candidates::quote_and_add_prefix(&v, Some(b'/')))
                 .collect::<Vec<u8>>();
-            let mut candidates = if output_jisyo_encoding == Encoding::Euc {
-                encoding_simple::Euc::encode(&utf8_candidates).unwrap()
+            let (midashi, mut candidates) = if output_jisyo_encoding == Encoding::Euc {
+                (
+                    encoding_simple::Euc::encode(&key_value.0).unwrap(),
+                    encoding_simple::Euc::encode(&utf8_candidates).unwrap(),
+                )
             } else {
-                utf8_candidates
+                (key_value.0, utf8_candidates)
             };
             candidates.push(b'/');
-            okuri_nasi_map.insert(key_value.0, candidates);
+            okuri_nasi_map.insert(midashi, candidates);
         }
         Self::write(
             output_jisyo_full_path,
