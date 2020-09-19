@@ -226,12 +226,7 @@ impl DictionaryCreator {
                 "next() : {:?} length={} {:x?}",
                 String::from_utf8(
                     encoding_simple::Euc::decode(
-                        &dictionary_block_informations
-                            .iter()
-                            .next()
-                            .unwrap()
-                            .midashi
-                            .clone()
+                        &dictionary_block_informations.iter().next().unwrap().midashi
                     )
                     .unwrap()
                 ),
@@ -242,12 +237,7 @@ impl DictionaryCreator {
                 "last() : {:?} length={} {:x?}",
                 String::from_utf8(
                     encoding_simple::Euc::decode(
-                        &dictionary_block_informations
-                            .iter()
-                            .last()
-                            .unwrap()
-                            .midashi
-                            .clone()
+                        &dictionary_block_informations.iter().last().unwrap().midashi
                     )
                     .unwrap()
                 ),
@@ -257,7 +247,7 @@ impl DictionaryCreator {
             for u in dictionary_block_informations {
                 println!(
                     "    {:?} LENGTH={} {:x?}",
-                    String::from_utf8(encoding_simple::Euc::decode(&u.midashi.clone()).unwrap()),
+                    String::from_utf8(encoding_simple::Euc::decode(&u.midashi).unwrap()),
                     u.length,
                     &u.midashi
                 );

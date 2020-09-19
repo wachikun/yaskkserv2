@@ -199,7 +199,7 @@ impl std::fmt::Display for Encoding {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum EncodingOptions {
     None,
     Bom,
