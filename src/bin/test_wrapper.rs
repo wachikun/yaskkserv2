@@ -53,7 +53,7 @@ fn print_total_map(total_map: &BTreeMap<String, Vec<usize>>) {
             panic!("illegal vec");
         } else {
             let mut vec = total_map[key].clone();
-            vec.sort();
+            vec.sort_unstable();
             let vec = vec;
             let is_show_chomped_vec = vec.len() >= IS_SHOW_CHOMPED_VEC_LENGTH_LIMIT;
             let chomped_vec = if is_show_chomped_vec {
