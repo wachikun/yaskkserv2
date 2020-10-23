@@ -20,11 +20,12 @@ use crate::skk::yaskkserv2::TcpStreamSkk;
 use crate::skk::yaskkserv2_make_dictionary::JisyoReader;
 use crate::skk::*;
 
-lazy_static! {
-    pub(in crate::skk) static ref INIT_MUTEX_LOCK: Mutex<()> = Mutex::new(());
-    pub(in crate::skk) static ref TEST_MUTEX_LOCK: Mutex<()> = Mutex::new(());
-    pub(in crate::skk) static ref MANY_THREAD_MUTEX_LOCK: Mutex<()> = Mutex::new(());
-}
+pub(in crate::skk) static INIT_MUTEX_LOCK: once_cell::sync::Lazy<Mutex<()>> =
+    once_cell::sync::Lazy::new(|| Mutex::new(()));
+pub(in crate::skk) static TEST_MUTEX_LOCK: once_cell::sync::Lazy<Mutex<()>> =
+    once_cell::sync::Lazy::new(|| Mutex::new(()));
+pub(in crate::skk) static MANY_THREAD_MUTEX_LOCK: once_cell::sync::Lazy<Mutex<()>> =
+    once_cell::sync::Lazy::new(|| Mutex::new(()));
 
 pub(in crate::skk) const DEBUG_FORCE_EXIT_DIRECTORY: &str = "DEBUG_FORCE_EXIT";
 const MANY_THREADS: usize = 8;

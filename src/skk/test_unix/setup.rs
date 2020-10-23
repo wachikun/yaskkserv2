@@ -10,17 +10,22 @@ use crate::skk::*;
 
 static ONCE_INIT: std::sync::Once = std::sync::Once::new();
 
-lazy_static! {
-    static ref RE_OPENSSL_MD5: Regex = Regex::new(r"= ([0-9a-f]{32})").unwrap();
-    static ref RE_DOT_MD5_FILE: Regex = Regex::new(r"^([0-9a-f]{32})").unwrap();
-    static ref RE_URL_FILENAME: Regex = Regex::new(r"/([^/]+)$").unwrap();
-    static ref EUC_JISYO_FULL_PATHS: RwLock<Vec<String>> = RwLock::new(Vec::new());
-    static ref UTF8_JISYO_FULL_PATHS: RwLock<Vec<String>> = RwLock::new(Vec::new());
-    static ref TEST_RUNNING_COUNT: RwLock<usize> = RwLock::new(0);
-    static ref PANIC_DEFAULT_HOOK: RwLock<Box<dyn Fn(&std::panic::PanicInfo<'_>) + 'static + Sync + Send>> =
-        RwLock::new(std::panic::take_hook());
-    static ref PANIC_THREAD_NAME_SET: RwLock<FxHashSet<String>> = RwLock::new(FxHashSet::default());
-}
+static RE_OPENSSL_MD5: once_cell::sync::Lazy<Regex> =
+    once_cell::sync::Lazy::new(|| Regex::new(r"= ([0-9a-f]{32})").unwrap());
+static RE_DOT_MD5_FILE: once_cell::sync::Lazy<Regex> =
+    once_cell::sync::Lazy::new(|| Regex::new(r"^([0-9a-f]{32})").unwrap());
+static RE_URL_FILENAME: once_cell::sync::Lazy<Regex> =
+    once_cell::sync::Lazy::new(|| Regex::new(r"/([^/]+)$").unwrap());
+static EUC_JISYO_FULL_PATHS: once_cell::sync::Lazy<RwLock<Vec<String>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
+static UTF8_JISYO_FULL_PATHS: once_cell::sync::Lazy<RwLock<Vec<String>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
+static TEST_RUNNING_COUNT: once_cell::sync::Lazy<RwLock<usize>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(0));
+static PANIC_DEFAULT_HOOK: once_cell::sync::Lazy<RwLock<Box<dyn Fn(&std::panic::PanicInfo<'_>) + 'static + Sync + Send>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(std::panic::take_hook()));
+static PANIC_THREAD_NAME_SET: once_cell::sync::Lazy<RwLock<FxHashSet<String>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(FxHashSet::default()));
 
 pub(in crate::skk) struct JisyoDownloader {}
 

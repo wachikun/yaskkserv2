@@ -58,10 +58,8 @@ const MIDASHI_VEC_CAPACITY: usize = 1024;
 
 const INITIAL_DICTIONARY_FILE_READ_BUFFER_LENGTH: usize = 8 * 1024;
 
-lazy_static! {
-    static ref GOOGLE_CACHE_OBJECT: RwLock<GoogleCacheObject> =
-        RwLock::new(GoogleCacheObject::new());
-}
+static GOOGLE_CACHE_OBJECT: once_cell::sync::Lazy<RwLock<GoogleCacheObject>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(GoogleCacheObject::new()));
 
 pub(in crate::skk) enum HandleClientResult {
     Continue,

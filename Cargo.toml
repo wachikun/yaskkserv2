@@ -1,7 +1,7 @@
 [package]
 name = "yaskkserv2"
 version = "0.1.0"
-authors = ["Tadashi Watanabe <wac@umiushi.org>"]
+authors = ["Tadashi Watanabe <twacc2020@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "Yet Another Skkserv 2"
 edition = "2018"
@@ -10,8 +10,8 @@ edition = "2018"
 bincode = "1.1.4"
 clap = "2.33.0"
 json = "0.12.0"
-lazy_static = "1.4.0"
 mio = "0.6.19"
+once_cell = "1.4.1"
 regex = "1.3.1"
 reqwest = "0.9.20"
 rustc-hash = "1.0.1"

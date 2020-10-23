@@ -144,11 +144,8 @@ impl Request {
     }
 
     fn convert_json_str_to_bytes(json: &json::JsonValue) -> Option<&[u8]> {
-        if let Some(s) = json.as_str() {
-            Some(s.as_bytes())
-        } else {
-            None
-        }
+        let s = json.as_str()?;
+        Some(s.as_bytes())
     }
 
     fn get_google_japanese_input_result_2(
