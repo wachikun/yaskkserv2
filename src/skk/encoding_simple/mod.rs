@@ -55,20 +55,20 @@ use std::sync::RwLock;
 
 use crate::skk::*;
 
-lazy_static! {
-    static ref EUC_2_TO_UTF8_VEC: RwLock<Vec<[u8; 4]>> = RwLock::new(Vec::new());
-    static ref UTF8_3_TO_EUC_VEC: RwLock<Vec<[u8; 3]>> = RwLock::new(Vec::new());
-    static ref EUC_3_TO_UTF8_MAP: RwLock<FxHashMap<[u8; 3], [u8; 4]>> =
-        RwLock::new(FxHashMap::default());
-    static ref UTF8_2_4_TO_EUC_MAP: RwLock<FxHashMap<[u8; 4], [u8; 3]>> =
-        RwLock::new(FxHashMap::default());
-    static ref COMBINE_EUC_TO_UTF8_MAP: RwLock<FxHashMap<[u8; 3], [u8; 8]>> =
-        RwLock::new(FxHashMap::default());
-    static ref COMBINE_UTF8_4_TO_EUC_MAP: RwLock<FxHashMap<[u8; 4], [u8; 3]>> =
-        RwLock::new(FxHashMap::default());
-    static ref COMBINE_UTF8_6_TO_EUC_MAP: RwLock<FxHashMap<[u8; 6], [u8; 3]>> =
-        RwLock::new(FxHashMap::default());
-}
+static EUC_2_TO_UTF8_VEC: once_cell::sync::Lazy<RwLock<Vec<[u8; 4]>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
+static UTF8_3_TO_EUC_VEC: once_cell::sync::Lazy<RwLock<Vec<[u8; 3]>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
+static EUC_3_TO_UTF8_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 3], [u8; 4]>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
+static UTF8_2_4_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 4], [u8; 3]>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
+static COMBINE_EUC_TO_UTF8_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 3], [u8; 8]>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
+static COMBINE_UTF8_4_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 4], [u8; 3]>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
+static COMBINE_UTF8_6_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 6], [u8; 3]>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
 
 pub(crate) struct Euc {}
 
