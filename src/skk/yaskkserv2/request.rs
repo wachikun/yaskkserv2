@@ -384,13 +384,13 @@ impl Request {
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_millis(timeout))
             .build()
-            .or_else(|e| {
+            .map_err(|e| {
                 Yaskkserv2::log_error(&format!("reqwest::Client::builder()  error={:?}", e));
-                Err(e)
+                e
             })?;
-        let mut response = client.get(url).send().or_else(|e| {
+        let mut response = client.get(url).send().map_err(|e| {
             Yaskkserv2::log_error(&format!("get()  error={:?}", e));
-            Err(e)
+            e
         })?;
         let status = response.status();
         if status == reqwest::StatusCode::OK {

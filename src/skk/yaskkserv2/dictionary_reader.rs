@@ -150,9 +150,9 @@ impl DictionaryReader {
     }
 
     fn read_google_candidates(&self, midashi: &[u8], result: &mut Vec<u8>) -> Result<(), SkkError> {
-        let utf8_midashi = encoding_simple::Euc::decode(midashi).or_else(|e| {
+        let utf8_midashi = encoding_simple::Euc::decode(midashi).map_err(|e| {
             Yaskkserv2::log_error(&format!("{}", e));
-            Err(e)
+            e
         })?;
         let cached_google_utf8_candidates = if self.config.is_google_cache_enabled {
             GoogleCache::get_candidates(&utf8_midashi)
@@ -470,9 +470,9 @@ impl DictionaryReader {
             dictionary_block_informations_index -= 1;
         }
         if encoding == Encoding::Utf8 {
-            let tmp_utf8 = encoding_simple::Euc::decode(result).or_else(|e| {
+            let tmp_utf8 = encoding_simple::Euc::decode(result).map_err(|e| {
                 Yaskkserv2::log_error(&format!("{}", e));
-                Err(e)
+                e
             })?;
             result.clear();
             result.extend_from_slice(&tmp_utf8);
