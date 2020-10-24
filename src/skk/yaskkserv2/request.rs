@@ -112,7 +112,7 @@ impl Request {
         true
     }
 
-    fn is_add_tail_candidates(midashi_tail: &[u8]) -> bool {
+    fn should_add_tail_candidates(midashi_tail: &[u8]) -> bool {
         let length = midashi_tail.len();
         if length < 1 {
             return false;
@@ -121,7 +121,7 @@ impl Request {
         tail_ascii < b'a' || tail_ascii > b'z'
     }
 
-    fn is_add(
+    fn should_add(
         candidates: &[&[u8]],
         is_insert_hiragana_only_candidate: bool,
         is_insert_katakana_only_candidate: bool,
@@ -160,14 +160,14 @@ impl Request {
                 if let Some(b_0) = Request::convert_json_str_to_bytes(u_0) {
                     for u_1 in json[1][1].members() {
                         if let Some(b_1) = Request::convert_json_str_to_bytes(u_1) {
-                            if Request::is_add(
+                            if Request::should_add(
                                 &[b_0, b_1],
                                 is_insert_hiragana_only_candidate,
                                 is_insert_katakana_only_candidate,
                                 is_insert_hankaku_katakana_only_candidate,
                             ) {
                                 let mut v = Vec::from(b_0);
-                                if Request::is_add_tail_candidates(midashi_tail) {
+                                if Request::should_add_tail_candidates(midashi_tail) {
                                     v.extend_from_slice(b_1);
                                 }
                                 result.push(v);
@@ -194,7 +194,7 @@ impl Request {
                         if let Some(b_1) = Request::convert_json_str_to_bytes(u_1) {
                             for u_2 in json[2][1].members() {
                                 if let Some(b_2) = Request::convert_json_str_to_bytes(u_2) {
-                                    if Request::is_add(
+                                    if Request::should_add(
                                         &[b_0, b_1, b_2],
                                         is_insert_hiragana_only_candidate,
                                         is_insert_katakana_only_candidate,
@@ -202,7 +202,7 @@ impl Request {
                                     ) {
                                         let mut v = Vec::from(b_0);
                                         v.extend_from_slice(b_1);
-                                        if Request::is_add_tail_candidates(midashi_tail) {
+                                        if Request::should_add_tail_candidates(midashi_tail) {
                                             v.extend_from_slice(b_2);
                                         }
                                         result.push(v);
@@ -233,7 +233,7 @@ impl Request {
                                 if let Some(b_2) = Request::convert_json_str_to_bytes(u_2) {
                                     for u_3 in json[3][1].members() {
                                         if let Some(b_3) = Request::convert_json_str_to_bytes(u_3) {
-                                            if Request::is_add(
+                                            if Request::should_add(
                                                 &[b_0, b_1, b_2, b_3],
                                                 is_insert_hiragana_only_candidate,
                                                 is_insert_katakana_only_candidate,
@@ -242,7 +242,8 @@ impl Request {
                                                 let mut v = Vec::from(b_0);
                                                 v.extend_from_slice(b_1);
                                                 v.extend_from_slice(b_2);
-                                                if Request::is_add_tail_candidates(midashi_tail) {
+                                                if Request::should_add_tail_candidates(midashi_tail)
+                                                {
                                                     v.extend_from_slice(b_3);
                                                 }
                                                 result.push(v);
@@ -289,7 +290,7 @@ impl Request {
             _ => {
                 for u in json[0][1].members() {
                     if let Some(bytes) = Request::convert_json_str_to_bytes(u) {
-                        if Request::is_add(
+                        if Request::should_add(
                             &[bytes],
                             is_insert_hiragana_only_candidate,
                             is_insert_katakana_only_candidate,

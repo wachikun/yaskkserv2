@@ -151,8 +151,8 @@ impl DictionaryCreator {
             let mut unit_length = DICTIONARY_BLOCK_UNIT_LENGTH;
             // offset は先頭の "\n" を指しているので、 midashi 部分を抽出するため space を探す
             if let Some(find) = twoway::find_bytes(&block_buffer[offset..], b" ") {
-                let mut is_break = offset + unit_length >= block_buffer_length;
-                if is_break {
+                let mut should_break = offset + unit_length >= block_buffer_length;
+                if should_break {
                     unit_length = block_buffer_length - offset;
                 }
                 if let Some(rfind) =
@@ -164,7 +164,7 @@ impl DictionaryCreator {
                     if rfind == offset {
                         unit_length = max_entry_length;
                         if block_buffer_length == unit_length {
-                            is_break = true;
+                            should_break = true;
                         }
                     }
                 }
@@ -181,7 +181,7 @@ impl DictionaryCreator {
                         offset: (blocks_len + offset) as u32,
                         length: (rfind + END_LF_LENGTH - offset) as u32,
                     });
-                    if is_break {
+                    if should_break {
                         aligned_block.push(b'\n');
                         let aligned_length =
                             Self::get_block_aligned_length(aligned_block.len() as u32);
