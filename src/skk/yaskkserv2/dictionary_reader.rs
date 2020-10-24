@@ -26,8 +26,8 @@ impl DictionaryReader {
     /// midashi_buffer は server に送られてくる b"1midashi ' のような形式。
     ///
     /// 戻り値は常に先頭に b'1' が付加されるため candidates が見付からなかった場合でも
-    /// result.len() == 0 とはならないことに注意。見付からなかった場合の判定には
-    /// Yaskkserv2::is_empty_candidates(&result) を使うこと。
+    /// result.len() == 0 / result.is_empty() とはならないことに注意。
+    /// 見付からなかった場合の判定には Yaskkserv2::is_empty_candidates(&result) を使うこと。
     pub(in crate::skk) fn read_candidates(
         &self,
         dictionary_file: &mut DictionaryFile,
@@ -253,7 +253,7 @@ impl DictionaryReader {
     /// dictionary_block_informations が小さく binary search をしなかった場合は、最大で
     /// BINARY_SEARCH_THRESHOLD / 2 個手前を指す可能性がある (binary search しない方が離れる
     /// が、 binary search のコストがかからない)。
-    fn get_block_informations_loop_start_index(
+    fn get_block_informations_loop_start_hint_index(
         midashi: &[u8],
         dictionary_block_informations: &[DictionaryBlockInformation],
     ) -> usize {
@@ -330,10 +330,13 @@ impl DictionaryReader {
         midashi: &[u8],
         dictionary_block_informations: &[DictionaryBlockInformation],
     ) -> usize {
-        let loop_start_index =
-            Self::get_block_informations_loop_start_index(midashi, dictionary_block_informations);
-        let mut dictionary_block_informations_index = loop_start_index;
-        for dictionary_block_information in &dictionary_block_informations[loop_start_index..] {
+        let loop_start_hint_index = Self::get_block_informations_loop_start_hint_index(
+            midashi,
+            dictionary_block_informations,
+        );
+        let mut dictionary_block_informations_index = loop_start_hint_index;
+        for dictionary_block_information in &dictionary_block_informations[loop_start_hint_index..]
+        {
             if dictionary_block_information.midashi[..] <= *midashi {
                 break;
             }
@@ -539,13 +542,14 @@ pub(in crate::skk) mod test_unix {
             //     );
             // }
             for midashi in &search_midashis {
-                let loop_start_index = DictionaryReader::get_block_informations_loop_start_index(
-                    &midashi[..],
-                    &dictionary_block_informations,
-                );
+                let loop_start_hint_index =
+                    DictionaryReader::get_block_informations_loop_start_hint_index(
+                        &midashi[..],
+                        &dictionary_block_informations,
+                    );
                 let mut debug_counter = 0;
                 for dictionary_block_information in
-                    &dictionary_block_informations[loop_start_index..]
+                    &dictionary_block_informations[loop_start_hint_index..]
                 {
                     if dictionary_block_information.midashi[..] <= midashi[..] {
                         break;

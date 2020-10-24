@@ -19,12 +19,12 @@ impl GoogleCache {
         cache_expire_seconds: u64,
     ) -> Result<(), SkkError> {
         let mut rw_lock_write = GOOGLE_CACHE_OBJECT.write().unwrap();
-        let is_write = if rw_lock_write.map.contains_key(midashi) {
+        let should_write = if rw_lock_write.map.contains_key(midashi) {
             candidates.to_vec() != rw_lock_write.map[midashi]
         } else {
             true
         };
-        if is_write {
+        if should_write {
             let mut cache_candidates = candidates.to_owned();
             let unix_time_now = std::time::SystemTime::now()
                 .duration_since(std::time::SystemTime::UNIX_EPOCH)
