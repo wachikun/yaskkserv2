@@ -191,10 +191,10 @@ fn echo_server_mio_raw_server(
                                     true
                                 }
                                 Err(e) => {
-                                    if e.kind() != std::io::ErrorKind::WouldBlock {
-                                        panic!("read panic {:#?}", e);
-                                    } else {
+                                    if e.kind() == std::io::ErrorKind::WouldBlock {
                                         false
+                                    } else {
+                                        panic!("read panic {:#?}", e);
                                     }
                                 }
                             } {}

@@ -1,4 +1,9 @@
-use crate::skk::yaskkserv2_make_dictionary::*;
+use crate::skk::yaskkserv2_make_dictionary::{
+    encoding_simple, Candidates, Dictionary, Encoding, EncodingOptions, JisyoEntriesMap,
+    JisyoReader, Read, Seek, SkkError, Yaskkserv2MakeDictionary,
+    JISYO_ENCODING_DETECT_BUFFER_LENGTH, JISYO_MAXIMUM_LINE_LENGTH,
+    JISYO_MINIMUM_CANDIDATES_LENGTH, JISYO_MINIMUM_LINE_LENGTH,
+};
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -25,15 +30,13 @@ impl BufReaderSkk for BufReader<std::fs::File> {
                     Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
                     Err(e) => return Err(e),
                 };
-                match find_cr_or_lf(&available) {
-                    Some(i) => {
-                        buf.extend_from_slice(&available[..=i]);
-                        (true, i + 1)
-                    }
-                    None => {
-                        buf.extend_from_slice(available);
-                        (false, available.len())
-                    }
+                #[allow(clippy::option_if_let_else)]
+                if let Some(i) = find_cr_or_lf(available) {
+                    buf.extend_from_slice(&available[..=i]);
+                    (true, i + 1)
+                } else {
+                    buf.extend_from_slice(available);
+                    (false, available.len())
                 }
             };
             self.consume(used);
@@ -91,7 +94,7 @@ impl JisyoReader {
             let mut line = Vec::new();
             let mut is_last_cr = false;
             'INNER: while match buf_reader.read_until_skk_jisyo(&mut line) {
-                Ok(0) => false,
+                Ok(0) | Err(_) => false,
                 Ok(size) => {
                     let chomped_line = if is_last_cr && line[0] == b'\n' {
                         if size == 1 {
@@ -125,13 +128,11 @@ impl JisyoReader {
                     line.clear();
                     true
                 }
-                Err(_) => false,
             } {}
         }
         Ok(result_jisyo_entries_map)
     }
 
-    #[allow(clippy::map_entry)]
     fn update_jisyo_entries_map(
         result_jisyo_entries_map: &mut JisyoEntriesMap,
         chomped_line: &[u8],
@@ -140,7 +141,7 @@ impl JisyoReader {
         jisyo_full_path: &str,
         line_number: usize,
     ) -> Result<(), SkkError> {
-        if let Ok(midashi_candidates) = Dictionary::get_midashi_candidates(&chomped_line) {
+        if let Ok(midashi_candidates) = Dictionary::get_midashi_candidates(chomped_line) {
             let (midashi, candidates) = Self::encode_midashi_candidates(
                 midashi_candidates,
                 jisyo_encoding,
@@ -152,11 +153,12 @@ impl JisyoReader {
                     r#"CORRECTED! (DUPLICATE CANDIDATES) {}:{} {:?}    {:?} -> {:?}"#,
                     jisyo_full_path,
                     line_number,
-                    &Self::get_line_string(&chomped_line, jisyo_encoding)?,
+                    &Self::get_line_string(chomped_line, jisyo_encoding)?,
                     candidates,
                     removed_duplicates_candidates
                 ));
             }
+            #[allow(clippy::map_entry)]
             if result_jisyo_entries_map.contains_key(&midashi) {
                 let merged_candidates = Candidates::merge_trimmed_slash_candidates(
                     Candidates::trim_one_slash(&result_jisyo_entries_map[&midashi]),
@@ -171,7 +173,7 @@ impl JisyoReader {
                 r#"SKIPPED! (UNKNOWN FORMAT) {}:{} {:?}"#,
                 jisyo_full_path,
                 line_number,
-                &Self::get_line_string(&chomped_line, jisyo_encoding)?,
+                &Self::get_line_string(chomped_line, jisyo_encoding)?,
             ));
         }
         Ok(())
@@ -232,12 +234,11 @@ impl JisyoReader {
             print_skip_warning_and_add_line_number!("LINE TOO LONG");
             return true;
         }
-        let space = match twoway::find_bytes(chomped_line, b" ") {
-            Some(space) => space,
-            None => {
-                print_skip_warning_and_add_line_number!("SPACE NOT FOUND");
-                return true;
-            }
+        let space = if let Some(space) = twoway::find_bytes(chomped_line, b" ") {
+            space
+        } else {
+            print_skip_warning_and_add_line_number!("SPACE NOT FOUND");
+            return true;
         };
         if chomped_line.len() < space + JISYO_MINIMUM_CANDIDATES_LENGTH {
             print_skip_warning_and_add_line_number!("CANDIDATES TOO SHORT");

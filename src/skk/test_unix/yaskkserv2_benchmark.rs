@@ -87,7 +87,7 @@ impl Yaskkserv2MakeDictionaryTest {
         let bench = std::time::Instant::now();
         for _ in 0..Self::LOOP {
             Yaskkserv2MakeDictionary::run_create_dictionary(
-                config.clone(),
+                &config.clone(),
                 &encoding_table,
                 &[jisyo_full_path.clone()],
             )
@@ -106,7 +106,7 @@ impl Yaskkserv2MakeDictionaryTest {
             .encoding(output_encoding);
         let bench = std::time::Instant::now();
         for _ in 0..Self::LOOP {
-            Yaskkserv2MakeDictionary::run_create_jisyo(config.clone(), jisyo_full_path).unwrap();
+            Yaskkserv2MakeDictionary::run_create_jisyo(&config.clone(), jisyo_full_path).unwrap();
         }
         let millis = bench.elapsed().as_millis();
         println!("{}  total  ms.={}", name, millis);

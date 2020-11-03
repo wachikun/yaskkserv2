@@ -99,9 +99,9 @@ fn detect_encoding_test() {
 
 #[test]
 fn remove_duplicates_test() {
-    let mut rng = rand::thread_rng();
     const OUTER_LOOP_COUNT: usize = 50000;
     const BUFFER_LOOP: usize = 1000;
+    let mut rng = rand::thread_rng();
     for _ in 0..OUTER_LOOP_COUNT {
         // compare_vec_* は remove_duplicates() とは異なるロジックで remove_duplicates() 相当の
         // 処理をするために使用する。

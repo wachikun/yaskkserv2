@@ -1,15 +1,15 @@
-#![warn(rust_2018_idioms)]
-#![warn(clippy::redundant_clone)]
+#![warn(rust_2018_idioms, clippy::all, clippy::pedantic, clippy::nursery)]
+#![warn(clippy::get_unwrap)]
 
 use regex::Regex;
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 
-/// 下記のような行を取得し、 total_map に NAME を key として N を Vec で追加する
+/// 下記のような行を取得し、 `total_map` に NAME を key として N を `Vec` で追加する
 ///
-/// "NAME total rps.=N"
-/// "NAME total ms.=N"
+/// `"NAME total rps.=N"`
+/// `"NAME total ms.=N"`
 fn run_cargo(test_name: &str, total_map: &mut BTreeMap<String, Vec<usize>>) {
     let re_name_unit = Regex::new(r"^([^ ]+) +.+(?:rps|ms)\.=(\d+)").unwrap();
     let cargo_args = if test_name.is_empty() {
@@ -99,7 +99,6 @@ fn main() {
             panic!("usage: cargo run --release --bin=test_wrapper -- loop_count [test_name]");
         }
     }
-    #[allow(clippy::needless_range_loop)]
     for i in 1..=loop_count {
         println!("loop = {:>3}/{:>3}", i, loop_count);
         run_cargo(&test_name, &mut total_map);

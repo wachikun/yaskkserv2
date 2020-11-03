@@ -1,4 +1,10 @@
-use crate::skk::encoding_simple::*;
+use crate::skk::encoding_simple::{
+    BufRead, BufReader, Decoder, Encoder, EncodingTable, File, Regex, SkkError,
+    COMBINE_EUC_TO_UTF8_MAP, COMBINE_UTF8_4_TO_EUC_MAP, COMBINE_UTF8_6_TO_EUC_MAP,
+    EUC_2_TO_UTF8_VEC, EUC_3_TO_UTF8_MAP, UTF8_2_4_TO_EUC_MAP, UTF8_3_TO_EUC_VEC,
+};
+
+type SetupMapResult = (Vec<[u8; 4]>, Vec<[u8; 3]>);
 
 impl EncodingTable {
     #[allow(dead_code)]
@@ -95,115 +101,41 @@ impl EncodingTable {
         let header_euc_utf8_combine_length = u32::from_ne_bytes(array_u32) as usize;
         array_u32.copy_from_slice(&encoding_table[12..12 + 4]);
         let header_euc_utf8_length = u32::from_ne_bytes(array_u32) as usize;
-        let mut offset = header_length;
-        for _ in 0..header_euc_utf8_combine_length {
-            let mut euc_3 = [0; 3];
-            let mut utf8_value = [0; 8];
-            euc_3.copy_from_slice(&encoding_table[offset..offset + 3]);
-            utf8_value.copy_from_slice(&encoding_table[offset + 3..offset + 3 + 8]);
-            COMBINE_EUC_TO_UTF8_MAP
-                .write()
-                .unwrap()
-                .insert(euc_3, utf8_value);
-            match encoding_table[offset + 3] {
-                0xc2..=0xdf => {
-                    let utf8_4_key = [
-                        encoding_table[offset + 3],
-                        encoding_table[offset + 4],
-                        encoding_table[offset + 3 + 4],
-                        encoding_table[offset + 4 + 4],
-                    ];
-                    COMBINE_UTF8_4_TO_EUC_MAP
-                        .write()
-                        .unwrap()
-                        .insert(utf8_4_key, euc_3);
-                }
-                0xe0..=0xef => {
-                    let utf8_6_key = [
-                        encoding_table[offset + 3],
-                        encoding_table[offset + 4],
-                        encoding_table[offset + 5],
-                        encoding_table[offset + 3 + 4],
-                        encoding_table[offset + 4 + 4],
-                        encoding_table[offset + 5 + 4],
-                    ];
-                    COMBINE_UTF8_6_TO_EUC_MAP
-                        .write()
-                        .unwrap()
-                        .insert(utf8_6_key, euc_3);
-                }
-                _ => {
-                    println!(
-                        "combine encoding_table error {:?}",
-                        encoding_table[offset + 3]
-                    );
-                    return Err(SkkError::Encoding);
-                }
-            }
-            offset += EUC_UTF8_COMBINE_UNIT_LENGTH;
-        }
-        let mut offset =
-            header_length + header_euc_utf8_combine_length * EUC_UTF8_COMBINE_UNIT_LENGTH;
-        let mut euc_2_to_utf8_vec = vec![[0; 4]; Decoder::EUC_2_TO_UTF8_VEC_INDEX_MAXIMUM + 1];
-        let mut utf8_3_to_euc_vec = vec![[0; 3]; Encoder::UTF8_3_TO_EUC_VEC_INDEX_MAXIMUM + 1];
-        for _ in 0..header_euc_utf8_length {
-            let euc_3 = [
-                encoding_table[offset],
-                encoding_table[offset + 1],
-                encoding_table[offset + 2],
-            ];
-            let utf8 = [
-                encoding_table[offset + 3],
-                encoding_table[offset + 4],
-                encoding_table[offset + 5],
-                encoding_table[offset + 6],
-            ];
-            match encoding_table[offset] {
-                0x8f => {
-                    EUC_3_TO_UTF8_MAP.write().unwrap().insert(euc_3, utf8);
-                }
-                0x8e | 0xa0..=0xff => {
-                    euc_2_to_utf8_vec[Decoder::get_euc_2_to_utf8_vec_index(
-                        encoding_table[offset],
-                        encoding_table[offset + 1],
-                    )]
-                    .copy_from_slice(&encoding_table[offset + 3..offset + 3 + 4]);
-                }
-                _ => {}
-            }
-            match utf8[0] {
-                0x00..=0x7f => {}
-                0xe0..=0xef => {
-                    utf8_3_to_euc_vec[Encoder::get_utf8_3_to_euc_vec_index(&utf8)]
-                        .copy_from_slice(&encoding_table[offset..offset + 3]);
-                }
-                _ => {
-                    UTF8_2_4_TO_EUC_MAP.write().unwrap().insert(utf8, euc_3);
-                }
-            }
-            offset += EUC_UTF8_UNIT_LENGTH;
-        }
+        Self::setup_combine_map(
+            encoding_table,
+            EUC_UTF8_COMBINE_UNIT_LENGTH,
+            header_length,
+            header_euc_utf8_combine_length,
+        )?;
+        let (euc_2_to_utf8_vec, utf8_3_to_euc_vec) = Self::setup_map(
+            encoding_table,
+            EUC_UTF8_UNIT_LENGTH,
+            EUC_UTF8_COMBINE_UNIT_LENGTH,
+            header_length,
+            header_euc_utf8_length,
+            header_euc_utf8_combine_length,
+        )?;
         *EUC_2_TO_UTF8_VEC.write().unwrap() = euc_2_to_utf8_vec;
         *UTF8_3_TO_EUC_VEC.write().unwrap() = utf8_3_to_euc_vec;
         Ok(())
     }
 
-    /// "U+????" 形式の unicode code を utf8 binary に変換し 8 bytes の Vec に返す
+    /// `"U+????"` 形式の unicode code を utf8 binary に変換し 8 bytes の Vec に返す
     ///
     /// 返される Vec は通常前半の 4 bytes が使われるが、結合文字の場合は後半の 4 bytes
     /// も使われる。Vec へは下記のように格納される。
     ///
-    ///    - [A0, A1,  0,  0,  0,  0,  0,  0]  is_combine = false
-    ///    - [A0, A1, A2,  0,  0,  0,  0,  0]  is_combine = false
+    ///    - `[A0, A1,  0,  0,  0,  0,  0,  0]  is_combine = false`
+    ///    - `[A0, A1, A2,  0,  0,  0,  0,  0]  is_combine = false`
     ///
-    ///    - [A0, A1,  0,  0, B1, B1,  0,  0]  is_combine = true
-    ///    - [A0, A1, A2,  0, B0, B1, B2,  0]  is_combine = true
+    ///    - `[A0, A1,  0,  0, B1, B1,  0,  0]  is_combine = true`
+    ///    - `[A0, A1, A2,  0, B0, B1, B2,  0]  is_combine = true`
     ///
-    /// 対応する unicode_str は下記 format のみ。
+    /// 対応する `unicode_str` は下記 format のみ。
     ///
-    /// A. U+????       is_combine = false
-    /// B. U+?????      is_combine = false
-    /// C. U+????+????  is_combine = true
+    /// A. `U+????       is_combine = false`
+    /// B. `U+?????      is_combine = false`
+    /// C. `U+????+????  is_combine = true`
     pub(crate) fn convert_unicode_code_to_utf8_8_bytes(
         unicode_code: &str,
         is_combine: &mut bool,
@@ -252,11 +184,11 @@ impl EncodingTable {
         {
             assert!(euc_code.starts_with("0x"));
         }
-        let mut result_euc_3 = vec![0; 3];
         const PREFIX_LENGTH: usize = 2;
         const DIGIT_2_LENGTH: usize = PREFIX_LENGTH + 2;
         const DIGIT_4_LENGTH: usize = PREFIX_LENGTH + 4;
         const DIGIT_6_LENGTH: usize = PREFIX_LENGTH + 6;
+        let mut result_euc_3 = vec![0; 3];
         match euc_code.len() {
             DIGIT_2_LENGTH => {
                 result_euc_3[0] = u8::from_str_radix(&euc_code[2..4], 16)?;
@@ -277,9 +209,118 @@ impl EncodingTable {
         Ok(result_euc_3)
     }
 
-    /// unicode から utf8 に変換し result_utf8 へ書き込む。書き込んだサイズを返す。
+    fn setup_combine_map(
+        encoding_table: &[u8],
+        euc_utf8_combine_unit_length: usize,
+        header_length: usize,
+        header_euc_utf8_combine_length: usize,
+    ) -> Result<(), SkkError> {
+        let mut offset = header_length;
+        for _ in 0..header_euc_utf8_combine_length {
+            let mut euc_3 = [0; 3];
+            let mut utf8_value = [0; 8];
+            euc_3.copy_from_slice(&encoding_table[offset..offset + 3]);
+            utf8_value.copy_from_slice(&encoding_table[offset + 3..offset + 3 + 8]);
+            COMBINE_EUC_TO_UTF8_MAP
+                .write()
+                .unwrap()
+                .insert(euc_3, utf8_value);
+            match encoding_table[offset + 3] {
+                0xc2..=0xdf => {
+                    let utf8_4_key = [
+                        encoding_table[offset + 3],
+                        encoding_table[offset + 4],
+                        encoding_table[offset + 3 + 4],
+                        encoding_table[offset + 4 + 4],
+                    ];
+                    COMBINE_UTF8_4_TO_EUC_MAP
+                        .write()
+                        .unwrap()
+                        .insert(utf8_4_key, euc_3);
+                }
+                0xe0..=0xef => {
+                    let utf8_6_key = [
+                        encoding_table[offset + 3],
+                        encoding_table[offset + 4],
+                        encoding_table[offset + 5],
+                        encoding_table[offset + 3 + 4],
+                        encoding_table[offset + 4 + 4],
+                        encoding_table[offset + 5 + 4],
+                    ];
+                    COMBINE_UTF8_6_TO_EUC_MAP
+                        .write()
+                        .unwrap()
+                        .insert(utf8_6_key, euc_3);
+                }
+                _ => {
+                    println!(
+                        "combine encoding_table error {:?}",
+                        encoding_table[offset + 3]
+                    );
+                    return Err(SkkError::Encoding);
+                }
+            }
+            offset += euc_utf8_combine_unit_length;
+        }
+        Ok(())
+    }
+
+    fn setup_map(
+        encoding_table: &[u8],
+        euc_utf8_unit_length: usize,
+        euc_utf8_combine_unit_length: usize,
+        header_length: usize,
+        header_euc_utf8_length: usize,
+        header_euc_utf8_combine_length: usize,
+    ) -> Result<SetupMapResult, SkkError> {
+        let mut offset =
+            header_length + header_euc_utf8_combine_length * euc_utf8_combine_unit_length;
+        let mut euc_2_to_utf8_vec = vec![[0; 4]; Decoder::EUC_2_TO_UTF8_VEC_INDEX_MAXIMUM + 1];
+        let mut utf8_3_to_euc_vec = vec![[0; 3]; Encoder::UTF8_3_TO_EUC_VEC_INDEX_MAXIMUM + 1];
+        for _ in 0..header_euc_utf8_length {
+            let euc_3 = [
+                encoding_table[offset],
+                encoding_table[offset + 1],
+                encoding_table[offset + 2],
+            ];
+            let utf8 = [
+                encoding_table[offset + 3],
+                encoding_table[offset + 4],
+                encoding_table[offset + 5],
+                encoding_table[offset + 6],
+            ];
+            match encoding_table[offset] {
+                0x8f => {
+                    EUC_3_TO_UTF8_MAP.write().unwrap().insert(euc_3, utf8);
+                }
+                0x8e | 0xa0..=0xff => {
+                    euc_2_to_utf8_vec[Decoder::get_euc_2_to_utf8_vec_index(
+                        encoding_table[offset],
+                        encoding_table[offset + 1],
+                    )]
+                    .copy_from_slice(&encoding_table[offset + 3..offset + 3 + 4]);
+                }
+                _ => {}
+            }
+            match utf8[0] {
+                0x00..=0x7f => {}
+                0xe0..=0xef => {
+                    utf8_3_to_euc_vec[Encoder::get_utf8_3_to_euc_vec_index(&utf8)]
+                        .copy_from_slice(&encoding_table[offset..offset + 3]);
+                }
+                _ => {
+                    UTF8_2_4_TO_EUC_MAP.write().unwrap().insert(utf8, euc_3);
+                }
+            }
+            offset += euc_utf8_unit_length;
+        }
+        Ok((euc_2_to_utf8_vec, utf8_3_to_euc_vec))
+    }
+
+    /// unicode から utf8 に変換し `result_utf8` へ書き込む。書き込んだサイズを返す。
     ///
     /// これ Rust 標準でできないっけ?
+    #[allow(clippy::cast_possible_truncation)]
     fn convert_unicode_to_utf8(unicode: u32, result_utf8: &mut [u8]) -> usize {
         match unicode {
             0x00..=0x7f => {

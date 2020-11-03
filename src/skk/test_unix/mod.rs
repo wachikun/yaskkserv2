@@ -280,6 +280,8 @@ impl ConnectSendCompare {
     }
 
     fn receive_line_protocol_4(&mut self, buffer: &[u8], midashi: &[u8], size: usize) {
+        const SKIP_HEAD_1: usize = 1;
+        const SLASH_AND_LF_LENGTH: usize = 1 + 1;
         if buffer[0] == b'4' {
             return;
         }
@@ -289,8 +291,6 @@ impl ConnectSendCompare {
         assert!(buffer[1] == b'/');
         assert!(buffer[size - 2] == b'/');
         assert!(buffer[size - 1] == b'\n');
-        const SKIP_HEAD_1: usize = 1;
-        const SLASH_AND_LF_LENGTH: usize = 1 + 1;
         let candidates = buffer[..size - SLASH_AND_LF_LENGTH]
             .split(|v| *v == b'/')
             .skip(SKIP_HEAD_1)

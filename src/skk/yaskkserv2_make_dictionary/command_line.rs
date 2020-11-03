@@ -1,4 +1,6 @@
-use crate::skk::*;
+use rustc_hash::FxHashSet;
+
+use crate::skk::{Config, Encoding, SkkError};
 
 #[derive(Default)]
 pub(in crate::skk) struct Yaskkserv2MakeDictionaryCommandLine {
@@ -9,10 +11,10 @@ pub(in crate::skk) struct Yaskkserv2MakeDictionaryCommandLine {
 }
 
 impl Yaskkserv2MakeDictionaryCommandLine {
-    pub(in crate::skk) fn new() -> Yaskkserv2MakeDictionaryCommandLine {
-        Yaskkserv2MakeDictionaryCommandLine {
+    pub(in crate::skk) fn new() -> Self {
+        Self {
             config: Config::new(),
-            ..Default::default()
+            ..Self::default()
         }
     }
 
@@ -65,7 +67,7 @@ impl Yaskkserv2MakeDictionaryCommandLine {
         }
         if let Some(jisyo_full_paths) = matches.values_of("jisyo") {
             self.jisyo_full_paths = jisyo_full_paths
-                .map(|x| x.to_string())
+                .map(std::string::ToString::to_string)
                 .collect::<Vec<String>>();
         }
         self.config.encoding = if matches.is_present("utf8") {
@@ -104,11 +106,12 @@ impl Yaskkserv2MakeDictionaryCommandLine {
         true
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn jisyo_validator(value: String) -> Result<(), String> {
-        if !std::path::Path::new(&value).exists() {
-            Err(format!(r#"jisyo "{}" not found"#, &value))
-        } else {
+        if std::path::Path::new(&value).exists() {
             Ok(())
+        } else {
+            Err(format!(r#"jisyo "{}" not found"#, &value))
         }
     }
 }

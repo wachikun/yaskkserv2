@@ -1,7 +1,8 @@
-use crate::skk::encoding_simple::*;
+use crate::skk::encoding_simple::EncodingTable;
 
 impl EncodingTable {
     // Self::create_src_table("euc-jis-2004-std.txt") で作成
+    #[allow(clippy::missing_const_for_fn, clippy::too_many_lines)]
     pub(crate) fn get() -> &'static [u8] {
         &[
             // header

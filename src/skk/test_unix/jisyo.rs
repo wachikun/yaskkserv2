@@ -70,7 +70,7 @@ impl Jisyo {
             .dictionary_full_path(String::from(dictionary_from_compare_jisyo_full_path))
             .encoding(dictionary_from_compare_jisyo_encoding);
         Yaskkserv2MakeDictionary::run_create_dictionary(
-            config,
+            &config,
             &encoding_table,
             &[String::from(compare_jisyo_from_dictionary_full_path)],
         )
@@ -150,7 +150,7 @@ impl Jisyo {
             .encoding(dictionary_from_test_jisyo_encoding)
             .dictionary_full_path(dictionary_from_test_jisyo_full_path.clone());
         Yaskkserv2MakeDictionary::run_create_dictionary(
-            config.clone(),
+            &config.clone(),
             &encoding_table,
             &[self.test_jisyo_full_path.clone()],
         )
@@ -158,13 +158,13 @@ impl Jisyo {
         {
             let mut config = config.clone();
             config.encoding = Encoding::Euc;
-            Yaskkserv2MakeDictionary::run_create_jisyo(config, &compare_euc_jisyo_full_path)
+            Yaskkserv2MakeDictionary::run_create_jisyo(&config, &compare_euc_jisyo_full_path)
                 .unwrap();
         }
         {
             let mut config = config.clone();
             config.encoding = Encoding::Utf8;
-            Yaskkserv2MakeDictionary::run_create_jisyo(config, &compare_utf8_jisyo_full_path)
+            Yaskkserv2MakeDictionary::run_create_jisyo(&config, &compare_utf8_jisyo_full_path)
                 .unwrap();
         }
         self.compare_euc_jisyo_hash =
@@ -311,7 +311,7 @@ impl Jisyo {
             .encoding(dictionary_encoding)
             .dictionary_full_path(output_dictionary_full_path);
         Yaskkserv2MakeDictionary::run_create_dictionary(
-            config.clone(),
+            &config.clone(),
             &encoding_simple::EncodingTable::get(),
             &[skk_jisyo_full_path],
         )
@@ -323,7 +323,7 @@ impl Jisyo {
         {
             let mut config = config.clone();
             config.encoding = Encoding::Euc;
-            Yaskkserv2MakeDictionary::run_create_jisyo(config, &euc_jisyo_full_path).unwrap();
+            Yaskkserv2MakeDictionary::run_create_jisyo(&config, &euc_jisyo_full_path).unwrap();
         }
         let utf8_jisyo_full_path = Path::get_full_path(&format!(
             "{}.jisyo_euc_utf8_dictionary_test.dictionary.{}.jisyo.utf8",
@@ -332,7 +332,7 @@ impl Jisyo {
         {
             let mut config = config.clone();
             config.encoding = Encoding::Utf8;
-            Yaskkserv2MakeDictionary::run_create_jisyo(config, &utf8_jisyo_full_path).unwrap();
+            Yaskkserv2MakeDictionary::run_create_jisyo(&config, &utf8_jisyo_full_path).unwrap();
         }
         let euc_map: FxHashMap<_, _> =
             read_jisyo_entries_no_encoding_conversion(&euc_jisyo_full_path)
@@ -362,12 +362,12 @@ impl Jisyo {
     ///
     /// JisyoReader が想定外の動作をしていないかの test 。
     fn run_read_test(encoding: Encoding) {
+        const YASKKSERV2_JISYO_MINIMUM_ENTRIES: usize = 500_000;
         let jisyo_full_path = &Path::get_full_path_yaskkserv2_jisyo(encoding);
         let jisyo_entries = read_jisyo_entries_no_encoding_conversion(jisyo_full_path);
         let mut reader = File::open(jisyo_full_path).unwrap();
         let mut simple_jisyo_entries = Jisyo::read_simple_jisyo_entries(&mut reader);
         simple_jisyo_entries.sort();
-        const YASKKSERV2_JISYO_MINIMUM_ENTRIES: usize = 500000;
         assert!(jisyo_entries.len() > YASKKSERV2_JISYO_MINIMUM_ENTRIES);
         assert!(simple_jisyo_entries.len() > YASKKSERV2_JISYO_MINIMUM_ENTRIES);
         // 失敗時に表示が膨大になるため assert_eq!() を使わないことに注意
@@ -444,13 +444,13 @@ impl EucUtf8OkuriAriNashi {
             .encoding(dictionary_encoding)
             .dictionary_full_path(dictionary_full_path);
         Yaskkserv2MakeDictionary::run_create_dictionary(
-            config.clone(),
+            &config.clone(),
             &encoding_table,
             &[String::from(source_jisyo_full_path)],
         )
         .unwrap();
         Yaskkserv2MakeDictionary::run_create_jisyo(
-            config.clone().encoding(Encoding::Euc),
+            &config.clone().encoding(Encoding::Euc),
             &euc_jisyo_full_path,
         )
         .unwrap();
@@ -460,7 +460,7 @@ impl EucUtf8OkuriAriNashi {
             reader.read_to_end(&mut euc_jisyo_buffer).unwrap();
         }
         Yaskkserv2MakeDictionary::run_create_jisyo(
-            config.encoding(Encoding::Utf8),
+            &config.encoding(Encoding::Utf8),
             &utf8_jisyo_full_path,
         )
         .unwrap();
@@ -532,10 +532,10 @@ fn jisyo_huge_dictionary_test() {
 
 #[test]
 fn jisyo_euc_utf8_test() {
+    const SKK_JISYO_BASE_NAME: &str = "SKK-JISYO.L";
     let name = "jisyo_euc_utf8";
     setup::setup_and_wait(name.clone());
     let mut jisyo = Jisyo::new(name);
-    const SKK_JISYO_BASE_NAME: &str = "SKK-JISYO.L";
     jisyo.run_euc_utf8_test(SKK_JISYO_BASE_NAME, Encoding::Euc);
     jisyo.run_euc_utf8_test(SKK_JISYO_BASE_NAME, Encoding::Utf8);
     setup::exit();

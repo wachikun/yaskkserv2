@@ -1,4 +1,10 @@
-use crate::skk::yaskkserv2::*;
+use sha1::Sha1;
+use std::fs::File;
+use std::io::{Read, Write};
+
+use crate::skk::yaskkserv2::{
+    GoogleCache, GoogleCacheBTreeMap, SkkError, GOOGLE_CACHE_OBJECT, SHA1SUM_LENGTH,
+};
 
 impl GoogleCache {
     pub(in crate::skk) fn get_candidates(midashi: &[u8]) -> Vec<Vec<u8>> {

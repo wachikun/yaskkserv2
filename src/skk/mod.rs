@@ -11,12 +11,8 @@ mod test_unix;
 
 #[cfg(unix)]
 use daemonize::Daemonize;
-
-use rustc_hash::{FxHashMap, FxHashSet};
-use sha1::Sha1;
+use rustc_hash::FxHashMap;
 use std::convert::TryInto;
-use std::fs::File;
-use std::io::{Read, Seek};
 
 use crate::skk::yaskkserv2::Yaskkserv2;
 use crate::skk::yaskkserv2_make_dictionary::Yaskkserv2MakeDictionary;
@@ -26,7 +22,7 @@ pub(in crate::skk) use crate::skk::error::SkkError;
 #[macro_export]
 macro_rules! define_builder {
     ($name: ident, $type: ty) => {
-        #[allow(dead_code, clippy::wrong_self_convention)]
+        #[allow(dead_code, clippy::wrong_self_convention, clippy::missing_const_for_fn)]
         fn $name(mut self, $name: $type) -> Self {
             self.$name = $name;
             self
@@ -79,17 +75,14 @@ trait U8Slice {
 }
 
 impl U8Slice for [u8] {
-    #[inline(always)]
     fn to_ne_u32(&self, offset: usize) -> u32 {
         u32::from_ne_bytes(self[offset..offset + 4].try_into().unwrap())
     }
 
-    #[inline(always)]
     fn to_ne_u32_2(&self, offset: usize) -> (u32, u32) {
         (self.to_ne_u32(offset), self.to_ne_u32(offset + 4))
     }
 
-    #[inline(always)]
     fn to_ne_u32_3(&self, offset: usize) -> (u32, u32, u32) {
         (
             self.to_ne_u32(offset),
@@ -98,7 +91,6 @@ impl U8Slice for [u8] {
         )
     }
 
-    #[inline(always)]
     fn to_array_4(&self, offset: usize) -> [u8; 4] {
         self[offset..offset + 4].try_into().unwrap()
     }
@@ -108,6 +100,7 @@ struct Dictionary {}
 
 struct Candidates {}
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Default)]
 pub(in crate::skk) struct Config {
     port: String,
@@ -137,8 +130,8 @@ pub(in crate::skk) struct Config {
 }
 
 impl Config {
-    fn new() -> Config {
-        Config {
+    fn new() -> Self {
+        Self {
             port: DEFAULT_PORT.to_string(),
             max_connections: DEFAULT_MAX_CONNECTIONS,
             listen_address: String::from(DEFAULT_LISTEN_ADDRESS),
@@ -154,7 +147,7 @@ impl Config {
             google_cache_expire_seconds: DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS,
             google_max_candidates_length: DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH,
             max_server_completions: DEFAULT_MAX_SERVER_COMPLETIONS,
-            ..Default::default()
+            ..Self::default()
         }
     }
 
@@ -189,7 +182,7 @@ pub(crate) enum Encoding {
 
 impl Default for Encoding {
     fn default() -> Self {
-        Encoding::Euc
+        Self::Euc
     }
 }
 
@@ -207,15 +200,15 @@ pub(crate) enum EncodingOptions {
 
 impl Default for EncodingOptions {
     fn default() -> Self {
-        EncodingOptions::None
+        Self::None
     }
 }
 
 impl Encoding {
-    fn from_u32(value: u32) -> Encoding {
+    fn from_u32(value: u32) -> Self {
         match value {
-            0 => Encoding::Euc,
-            1 => Encoding::Utf8,
+            0 => Self::Euc,
+            1 => Self::Utf8,
             _ => panic!("unknown value={}", value),
         }
     }
@@ -231,7 +224,7 @@ enum GoogleTiming {
 
 impl Default for GoogleTiming {
     fn default() -> Self {
-        GoogleTiming::NotFound
+        Self::NotFound
     }
 }
 
@@ -425,44 +418,12 @@ struct DictionaryFixedHeader {
 }
 
 impl DictionaryFixedHeader {
-    fn new() -> DictionaryFixedHeader {
-        DictionaryFixedHeader {
+    fn new() -> Self {
+        Self {
             dictionary_version: DICTIONARY_VERSION,
             sha1sum: SHA1SUM_ZERO,
-            ..Default::default()
+            ..Self::default()
         }
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    fn setup(
-        &mut self,
-        dictionary_version: u32,
-        encoding_table_offset: u32,
-        encoding_table_length: u32,
-        index_data_header_offset: u32,
-        index_data_header_length: u32,
-        index_data_offset: u32,
-        index_data_length: u32,
-        blocks_offset: u32,
-        blocks_length: u32,
-        dictionary_length: u32,
-        encoding: Encoding,
-        sha1sum: [u8; SHA1SUM_LENGTH],
-    ) {
-        *self = DictionaryFixedHeader {
-            dictionary_version,
-            encoding_table_offset,
-            encoding_table_length,
-            index_data_header_offset,
-            index_data_header_length,
-            index_data_offset,
-            index_data_length,
-            blocks_offset,
-            blocks_length,
-            dictionary_length,
-            encoding: encoding as u32,
-            sha1sum,
-        };
     }
 }
 
@@ -520,10 +481,10 @@ struct DictionaryBlockInformation {
     length: u32,
 }
 
-/// index_map と index_ascii_hiragana_vec が分かれているのは高速化のため。
-/// 頻繁にアクセスするひらがなを Vec で保持している。 ASCII は benchmark 対策のおまけ。
-/// index_ascii_hiragana_vec の index は OnMemory::get_ascii_hiragana_vec_index() で取得する。
-/// index_ascii_hiragana_vec は INDEX_ASCII_HIRAGANA_VEC_LENGTH(256) 要素で 0x00-0x7f が ASCII
+/// `index_map` と `index_ascii_hiragana_vec` が分かれているのは高速化のため。
+/// 頻繁にアクセスするひらがなを `Vec` で保持している。 ASCII は benchmark 対策のおまけ。
+/// `index_ascii_hiragana_vec` の index は `OnMemory::get_ascii_hiragana_vec_index()` で取得する。
+/// `index_ascii_hiragana_vec` は `INDEX_ASCII_HIRAGANA_VEC_LENGTH(256)` 要素で 0x00-0x7f が ASCII
 /// 用、 0x80-0xff がひらがなの 2 bytes 目用の領域となっている。(便宜上ひらがなとしているが、
 /// 1 byte 目が 0xa4 のものをすべて対象としている。 2 bytes 目も実装を単純にするため、詰める
 /// ようなことをせず 0xa1-0xf3 をそのままマップしている。)
@@ -535,15 +496,17 @@ pub(in crate::skk) struct OnMemory {
 }
 
 impl OnMemory {
-    fn new() -> OnMemory {
-        OnMemory {
+    fn new() -> Self {
+        Self {
             dictionary_fixed_header: DictionaryFixedHeader::new(),
             index_map: IndexMap::default(),
             index_ascii_hiragana_vec: IndexAsciiHiraganaVec::new(),
         }
     }
 
-    fn get_ascii_hiragana_vec_index(dictionary_midashi_key: DictionaryMidashiKey) -> Option<usize> {
+    const fn get_ascii_hiragana_vec_index(
+        dictionary_midashi_key: DictionaryMidashiKey,
+    ) -> Option<usize> {
         match dictionary_midashi_key[0] {
             0x00..=0x7f => Some(dictionary_midashi_key[0] as usize),
             0xa4 => Some(dictionary_midashi_key[1] as usize),
@@ -552,6 +515,10 @@ impl OnMemory {
     }
 }
 
+/// # Errors
+///
+/// 起動時、すなわち config file や dictionary の読み込みに失敗した場合は `Err` を返す。
+/// 起動後に `Err` を返すことはない。
 #[allow(dead_code)]
 pub fn run_yaskkserv2() -> Result<(), SkkError> {
     let mut command_line = yaskkserv2::command_line::Yaskkserv2CommandLine::new();
@@ -587,6 +554,9 @@ fn run_yaskkserv2_impl(core: &mut Yaskkserv2, _is_no_daemonize: bool) {
     core.run();
 }
 
+/// # Errors
+///
+/// 辞書変換失敗や I/O error が発生した場合に `Err` を返す。
 #[allow(dead_code)]
 pub fn run_yaskkserv2_make_dictionary() -> Result<(), SkkError> {
     let mut command_line =
@@ -600,19 +570,19 @@ pub fn run_yaskkserv2_make_dictionary() -> Result<(), SkkError> {
     if !command_line.get_input_cache_full_path().is_empty() {
         let config = command_line.get_config();
         Yaskkserv2MakeDictionary::run_create_jisyo_from_cache(
-            &command_line.get_input_cache_full_path(),
+            command_line.get_input_cache_full_path(),
             command_line.get_output_jisyo_full_path(),
             config.encoding,
         )?;
     } else if command_line.get_output_jisyo_full_path().is_empty() {
         Yaskkserv2MakeDictionary::run_create_dictionary(
-            command_line.get_config(),
+            &command_line.get_config(),
             encoding_table,
             &command_line.get_jisyo_full_paths(),
         )?;
     } else {
         Yaskkserv2MakeDictionary::run_create_jisyo(
-            command_line.get_config(),
+            &command_line.get_config(),
             command_line.get_output_jisyo_full_path(),
         )?;
     }

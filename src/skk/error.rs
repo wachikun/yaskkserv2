@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Error)]
 pub enum SkkError {
     #[error("{}", .0)]

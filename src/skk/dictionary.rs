@@ -1,4 +1,14 @@
-use crate::skk::*;
+use sha1::Sha1;
+use std::fs::File;
+use std::io::{Read, Seek};
+
+use crate::skk::{
+    once_init_encoding_table, BlockInformationOffsetLength, Dictionary, DictionaryBlockHeads,
+    DictionaryBlockInformation, DictionaryFixedHeader, DictionaryMidashiKey, IndexAsciiHiraganaVec,
+    IndexDataHeader, IndexDataHeaderBlockHeader, IndexMap, OnMemory, SkkError, ToFromNeBytes,
+    DICTIONARY_FIXED_HEADER_AREA_LENGTH, INDEX_ASCII_HIRAGANA_VEC_LENGTH, SHA1SUM_LENGTH,
+    SHA1SUM_ZERO,
+};
 
 impl Dictionary {
     pub(in crate::skk) fn setup(
@@ -54,12 +64,12 @@ impl Dictionary {
         })
     }
 
-    /// euc_buffer から DictionaryMidashiKey を取得する
+    /// `euc_buffer` から `DictionaryMidashiKey` を取得する
     ///
-    /// なお、ここでの euc_buffer は正しい euc code ということを前提として良い。
-    /// (なので euc_buffer[0] の範囲が正当ならば 2 bytes 目の内容を見ずに判定して良いし、
+    /// なお、ここでの `euc_buffer` は正しい euc code ということを前提として良い。
+    /// (なので `euc_buffer[0]` の範囲が正当ならば 2 bytes 目の内容を見ずに判定して良いし、
     /// 2 bytes 目以降は存在するとしてアクセスしても良い)
-    pub(in crate::skk) fn get_dictionary_midashi_key(
+    pub(in crate::skk) const fn get_dictionary_midashi_key(
         euc_buffer: &[u8],
     ) -> Result<DictionaryMidashiKey, SkkError> {
         match euc_buffer[0] {
@@ -98,6 +108,7 @@ impl Dictionary {
                 }
                 break;
             }
+            #[allow(clippy::cast_possible_truncation)]
             hasher.update(&buffer[..(read_length as usize)]);
             total_scan_length += read_length;
         }
@@ -136,7 +147,7 @@ impl Dictionary {
                 dictionary_block_heads.dictionary_midashi_key,
             );
             let joined_midashi = Self::get_joined_midashi(
-                &buffer,
+                buffer,
                 buffer_offset,
                 dictionary_block_heads.information_length as usize,
                 dictionary_block_heads.information_midashi_length as usize,
@@ -179,8 +190,8 @@ impl Dictionary {
         reader: &mut File,
         header_buffer: &[u8],
     ) -> Result<(IndexMap, IndexAsciiHiraganaVec), SkkError> {
-        let index_data_header = IndexDataHeader::from_ne_bytes(header_buffer);
         const BLOCK_BUFFER_LENGTH_LIMIT: usize = 2 * 1024 * 1024;
+        let index_data_header = IndexDataHeader::from_ne_bytes(header_buffer);
         assert!((index_data_header.block_buffer_length as usize) < BLOCK_BUFFER_LENGTH_LIMIT);
         let mut buffer = vec![0; index_data_header.block_buffer_length as usize];
         let mut result_index_map = IndexMap::default();

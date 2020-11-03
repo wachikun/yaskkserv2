@@ -1,10 +1,17 @@
-use crate::skk::yaskkserv2::*;
+#[cfg(feature = "assert_paranoia")]
+use crate::const_panic;
+#[allow(unused_imports)]
+use crate::skk::yaskkserv2::{
+    encoding_simple, Candidates, Config, Dictionary, DictionaryBlockInformation, DictionaryFile,
+    DictionaryMidashiKey, DictionaryReader, Encoding, GoogleCache, GoogleTiming, OnMemory, Request,
+    SkkError, Yaskkserv2, MIDASHI_VEC_CAPACITY, PROTOCOL_MINIMUM_LENGTH, RESULT_VEC_CAPACITY,
+};
 
 const BINARY_SEARCH_THRESHOLD: usize = 30;
 
 impl DictionaryReader {
-    pub(in crate::skk) fn new() -> DictionaryReader {
-        DictionaryReader {
+    pub(in crate::skk) fn new() -> Self {
+        Self {
             config: Config::new(),
             on_memory: OnMemory::new(),
             google_japanese_input_protocol: String::from("https"),
@@ -21,13 +28,13 @@ impl DictionaryReader {
         }
     }
 
-    /// midashi_buffer にある midashi から対応する candidates を返す
+    /// `midashi_buffer` にある midashi から対応する candidates を返す
     ///
-    /// midashi_buffer は server に送られてくる b"1midashi ' のような形式。
+    /// `midashi_buffer` は server に送られてくる `b"1midashi "` のような形式。
     ///
-    /// 戻り値は常に先頭に b'1' が付加されるため candidates が見付からなかった場合でも
-    /// result.len() == 0 / result.is_empty() とはならないことに注意。
-    /// 見付からなかった場合の判定には Yaskkserv2::is_empty_candidates(&result) を使うこと。
+    /// 戻り値は常に先頭に `b'1'` が付加されるため candidates が見付からなかった場合でも
+    /// `result.len() == 0 / result.is_empty()` とはならないことに注意。
+    /// 見付からなかった場合の判定には `Yaskkserv2::is_empty_candidates(&result)` を使うこと。
     pub(in crate::skk) fn read_candidates(
         &self,
         dictionary_file: &mut DictionaryFile,
@@ -61,12 +68,12 @@ impl DictionaryReader {
         Ok(result)
     }
 
-    /// midashi_buffer にある midashi から対応する midashi 群を返す
+    /// `midashi_buffer` にある midashi から対応する midashi 群を返す
     ///
-    /// midashi_buffer は server に送られてくる b"4midashi ' のような形式。
+    /// `midashi_buffer` は server に送られてくる `b"4midashi "` のような形式。
     ///
-    /// read_candidates() と同様に戻り値の長さは 0 にならないため、見付からなかった場合の
-    /// 判定には Yaskkserv2::is_empty_candidates(&result) を使うこと。
+    /// `read_candidates()` と同様に戻り値の長さは 0 にならないため、見付からなかった場合の
+    /// 判定には `Yaskkserv2::is_empty_candidates(&result)` を使うこと。
     pub(in crate::skk) fn read_abbrev(
         &self,
         dictionary_file: &mut DictionaryFile,
@@ -95,7 +102,7 @@ impl DictionaryReader {
         Ok(result)
     }
 
-    pub(in crate::skk) fn is_okuri_ari(midashi: &[u8]) -> bool {
+    pub(in crate::skk) const fn is_okuri_ari(midashi: &[u8]) -> bool {
         const OKURI_ARI_MIDASHI_MINIMUM_LENGTH: usize = 2 + 1; // "あs"
         let length = midashi.len();
         if length < OKURI_ARI_MIDASHI_MINIMUM_LENGTH {
@@ -109,7 +116,7 @@ impl DictionaryReader {
                 match midashi[last_character_index] {
                     b'a'..=b'z' => match midashi[last_character_index - 2] {
                         0x81..=0x82 if midashi[last_character_index - 3] == 0xe3 => {
-                            panic!("utf8 hiragana found");
+                            const_panic!("utf8 hiragana found");
                         }
                         _ => {}
                     },
@@ -201,16 +208,16 @@ impl DictionaryReader {
             let base_candidates_bytes = Candidates::trim_one_slash(&result[1..]);
             let new_candidates_bytes_tmp = google_utf8_candidates
                 .iter()
-                .flat_map(|v| Candidates::quote_and_add_prefix(&v, Some(b'/')))
+                .flat_map(|v| Candidates::quote_and_add_prefix(v, Some(b'/')))
                 .collect::<Vec<u8>>();
             new_result.push(b'1');
             let new_candidates_bytes = Candidates::trim_one_slash(&new_candidates_bytes_tmp);
             if Encoding::from_u32(self.on_memory.dictionary_fixed_header.encoding) == Encoding::Euc
             {
-                match encoding_simple::Euc::encode(&new_candidates_bytes) {
+                match encoding_simple::Euc::encode(new_candidates_bytes) {
                     Ok(encoded) => {
                         new_result.extend_from_slice(&Candidates::merge_trimmed_slash_candidates(
-                            &base_candidates_bytes,
+                            base_candidates_bytes,
                             &encoded,
                         ));
                     }
@@ -221,8 +228,8 @@ impl DictionaryReader {
                 }
             } else {
                 new_result.extend_from_slice(&Candidates::merge_trimmed_slash_candidates(
-                    &base_candidates_bytes,
-                    &new_candidates_bytes,
+                    base_candidates_bytes,
+                    new_candidates_bytes,
                 ));
             }
         }
@@ -239,20 +246,21 @@ impl DictionaryReader {
         Ok(())
     }
 
-    /// dictionary_block_informations の探索 loop を開始するのに適した index を返す
+    /// `dictionary_block_informations` の探索 loop を開始するのに適した index を返す
     ///
     /// あくまでも loop 開始に適した index で、 index に目的の midashi が含まれるわけではない
     /// ことに注意。
     ///
-    /// dictionary_block_informations は巨大な辞書で数百程度まで増えるため、
-    /// BINARY_SEARCH_THRESHOLD を越える場合は binary search する。
-    /// BINARY_SEARCH_THRESHOLD は network を介さず直接辞書探索する benchmark で時間を計測した
+    /// `dictionary_block_informations` は巨大な辞書で数百程度まで増えるため、
+    /// `BINARY_SEARCH_THRESHOLD` を越える場合は binary search する。
+    /// `BINARY_SEARCH_THRESHOLD` は network を介さず直接辞書探索する benchmark で時間を計測した
     /// ものを plot してそこそこ効果がありそうだった値。
     ///
     /// binary search した場合、返す index は最大で目的の 2 個手前を指すことがある。
-    /// dictionary_block_informations が小さく binary search をしなかった場合は、最大で
-    /// BINARY_SEARCH_THRESHOLD / 2 個手前を指す可能性がある (binary search しない方が離れる
+    /// `dictionary_block_informations` が小さく binary search をしなかった場合は、最大で
+    /// `BINARY_SEARCH_THRESHOLD / 2` 個手前を指す可能性がある (binary search しない方が離れる
     /// が、 binary search のコストがかからない)。
+    #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
     fn get_block_informations_loop_start_hint_index(
         midashi: &[u8],
         dictionary_block_informations: &[DictionaryBlockInformation],
@@ -276,6 +284,7 @@ impl DictionaryReader {
             let mut diff_zero_count = 0;
             loop {
                 let mut direction = 0;
+                #[allow(clippy::cast_sign_loss)]
                 if *midashi > dictionary_block_informations[index as usize].midashi[..] {
                     index -= diff;
                     if index < 0 {
@@ -301,6 +310,7 @@ impl DictionaryReader {
                 }
                 previous_direction = direction;
             }
+            #[allow(clippy::cast_sign_loss)]
             let mut dictionary_block_informations_index = index as usize;
             while dictionary_block_informations_index < dictionary_block_informations_length {
                 if dictionary_block_informations[dictionary_block_informations_index].midashi[..]
@@ -377,10 +387,10 @@ impl DictionaryReader {
             u64::from(blocks_offset) + u64::from(unit.offset),
             unit.length as usize,
         )?;
-        if let Some(midashi_find) = twoway::find_bytes(&buffer, &midashi_search_bytes) {
+        if let Some(midashi_find) = twoway::find_bytes(buffer, &midashi_search_bytes) {
             let candidates_start = midashi_find + midashi_search_bytes.len();
             if let Some(lf_find) = twoway::find_bytes(&buffer[candidates_start..], b"\n") {
-                if Yaskkserv2::is_empty_candidates(&result) {
+                if Yaskkserv2::is_empty_candidates(result) {
                     result.push(b'/');
                     result
                         .extend_from_slice(&buffer[candidates_start..(candidates_start + lf_find)]);
@@ -505,7 +515,7 @@ pub(in crate::skk) mod test_unix {
     /// ケースの test をしている。
     #[test]
     fn yaskkserv2_dictionary_reader_get_block_informations_loop_start_index_test() {
-        const TEST_LOOP: usize = 100000;
+        const TEST_LOOP: usize = 100_000;
         for _ in 0..TEST_LOOP {
             let search_midashis = {
                 let mut search_midashis = Vec::new();
