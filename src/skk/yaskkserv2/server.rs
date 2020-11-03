@@ -1,8 +1,16 @@
-use crate::skk::yaskkserv2::*;
+#[cfg(test)]
+use crate::skk::yaskkserv2::server::test_unix::ServerDebug;
+use crate::skk::yaskkserv2::{
+    BufReader, Config, DictionaryFile, DictionaryReader, HandleClientResult, OnMemory, Server,
+    SkkError, TcpStream, TcpStreamSkk, Yaskkserv2, PKG_VERSION, PROTOCOL_MAXIMUM_LENGTH,
+    PROTOCOL_MINIMUM_LENGTH,
+};
+#[cfg(feature = "assert_paranoia")]
+use crate::{const_assert, const_panic};
 
 impl Server {
-    pub(in crate::skk) fn new() -> Server {
-        Server {
+    pub(in crate::skk) fn new() -> Self {
+        Self {
             config: Config::new(),
             dictionary: DictionaryReader::new(),
         }
@@ -23,7 +31,7 @@ impl Server {
         match buffer[0] {
             b'0' => return HandleClientResult::Exit,
             b'1' => self.handle_client_protocol_1(stream, dictionary_file, buffer),
-            b'2' => stream.write_all_flush_ignore_error(&format!("{} ", PKG_VERSION).as_bytes()),
+            b'2' => stream.write_all_flush_ignore_error(format!("{} ", PKG_VERSION).as_bytes()),
             b'3' => stream.write_all_flush_ignore_error(
                 self.config
                     .hostname_and_ip_address_for_protocol_3
@@ -37,19 +45,19 @@ impl Server {
         HandleClientResult::Continue
     }
 
-    fn validate_buffer_for_protocol_1_and_4(buffer: &[u8]) -> bool {
+    const fn validate_buffer_for_protocol_1_and_4(buffer: &[u8]) -> bool {
         let buffer_len = buffer.len();
         if buffer_len < PROTOCOL_MINIMUM_LENGTH || buffer_len > PROTOCOL_MAXIMUM_LENGTH {
             return false;
         }
         #[cfg(feature = "assert_paranoia")]
         {
-            assert!(buffer[buffer_len - 1] == b' ');
+            const_assert!(buffer[buffer_len - 1] == b' ');
         }
         true
     }
 
-    fn send_and_log_protocol_error(stream: &mut TcpStream, protocol: &str, e: SkkError) {
+    fn send_and_log_protocol_error(stream: &mut TcpStream, protocol: &str, e: &SkkError) {
         Yaskkserv2::log_error(&format!("protocol {} error={}", protocol, e));
         let _ignore_error = stream.write_error_flush();
     }
@@ -60,7 +68,7 @@ impl Server {
         dictionary_file: &mut DictionaryFile,
         buffer: &mut [u8],
     ) {
-        if !Self::validate_buffer_for_protocol_1_and_4(&buffer) {
+        if !Self::validate_buffer_for_protocol_1_and_4(buffer) {
             let _ignore_error = stream.write_error_flush();
             return;
         }
@@ -70,14 +78,14 @@ impl Server {
                     buffer[0] = b'4';
                     if let Some(last) = buffer.last() {
                         if *last == b'\n' || *last == b'\r' {
-                            stream.write_all_flush_ignore_error(&buffer);
+                            stream.write_all_flush_ignore_error(buffer);
                         } else {
                             let mut lf_appended_buffer = Vec::from(buffer);
                             lf_appended_buffer.push(b'\n');
                             stream.write_all_flush_ignore_error(&lf_appended_buffer);
                         }
                     } else {
-                        Self::send_and_log_protocol_error(stream, "1", SkkError::BrokenDictionary);
+                        Self::send_and_log_protocol_error(stream, "1", &SkkError::BrokenDictionary);
                     }
                 } else {
                     candidates.push(b'\n');
@@ -93,7 +101,7 @@ impl Server {
                     }
                 }
             }
-            Err(e) => Self::send_and_log_protocol_error(stream, "1", e),
+            Err(e) => Self::send_and_log_protocol_error(stream, "1", &e),
         }
     }
 
@@ -103,7 +111,7 @@ impl Server {
         dictionary_file: &mut DictionaryFile,
         buffer: &mut [u8],
     ) {
-        if !Self::validate_buffer_for_protocol_1_and_4(&buffer) {
+        if !Self::validate_buffer_for_protocol_1_and_4(buffer) {
             let _ignore_error = stream.write_error_flush();
             return;
         }
@@ -112,21 +120,21 @@ impl Server {
                 if Yaskkserv2::is_empty_candidates(&candidates) {
                     if let Some(last) = buffer.last() {
                         if *last == b'\n' || *last == b'\r' {
-                            stream.write_all_flush_ignore_error(&buffer);
+                            stream.write_all_flush_ignore_error(buffer);
                         } else {
                             let mut lf_appended_buffer = Vec::from(buffer);
                             lf_appended_buffer.push(b'\n');
                             stream.write_all_flush_ignore_error(&lf_appended_buffer);
                         }
                     } else {
-                        Self::send_and_log_protocol_error(stream, "4", SkkError::BrokenDictionary);
+                        Self::send_and_log_protocol_error(stream, "4", &SkkError::BrokenDictionary);
                     }
                 } else {
                     candidates.push(b'\n');
                     stream.write_all_flush_ignore_error(&candidates);
                 }
             }
-            Err(e) => Self::send_and_log_protocol_error(stream, "4", e),
+            Err(e) => Self::send_and_log_protocol_error(stream, "4", &e),
         }
     }
 }

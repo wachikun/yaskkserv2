@@ -3,7 +3,7 @@ use rustc_hash::FxHashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-use crate::skk::*;
+use crate::skk::{yaskkserv2, Config, GoogleTiming, SkkError};
 
 #[derive(Default)]
 pub(in crate::skk) struct Yaskkserv2ConfigFile {
@@ -12,13 +12,14 @@ pub(in crate::skk) struct Yaskkserv2ConfigFile {
 }
 
 impl Yaskkserv2ConfigFile {
-    pub(in crate::skk) fn new(config: &Config) -> Yaskkserv2ConfigFile {
-        Yaskkserv2ConfigFile {
+    pub(in crate::skk) fn new(config: &Config) -> Self {
+        Self {
             config: config.clone(),
             default_config: Config::new(),
         }
     }
 
+    #[allow(clippy::missing_const_for_fn)]
     pub(in crate::skk) fn get_config(self) -> Config {
         self.config
     }
@@ -49,6 +50,7 @@ impl Yaskkserv2ConfigFile {
         Ok(())
     }
 
+    #[allow(clippy::too_many_lines)]
     fn validate_and_set_config(
         &mut self,
         candidates: &FxHashMap<String, String>,
@@ -85,55 +87,67 @@ impl Yaskkserv2ConfigFile {
             };
         }
 
-        let key = "dictionary";
-        if candidates.contains_key(key) && self.config.dictionary_full_path.is_empty() {
-            let tmp = candidates[key].to_owned();
-            yaskkserv2::command_line::Yaskkserv2CommandLine::dictionary_validator(tmp.to_owned())?;
-            self.config.dictionary_full_path = tmp;
+        {
+            let key = "dictionary";
+            if candidates.contains_key(key) && self.config.dictionary_full_path.is_empty() {
+                let tmp = candidates[key].to_owned();
+                yaskkserv2::command_line::Yaskkserv2CommandLine::dictionary_validator(
+                    tmp.to_owned(),
+                )?;
+                self.config.dictionary_full_path = tmp;
+            }
         }
-        let key = "port";
-        if candidates.contains_key(key) && self.config.port == self.default_config.port {
-            let tmp = candidates[key].to_owned();
-            yaskkserv2::command_line::Yaskkserv2CommandLine::port_validator(tmp.to_owned())?;
-            self.config.port = tmp;
+        {
+            let key = "port";
+            if candidates.contains_key(key) && self.config.port == self.default_config.port {
+                let tmp = candidates[key].to_owned();
+                yaskkserv2::command_line::Yaskkserv2CommandLine::port_validator(tmp.to_owned())?;
+                self.config.port = tmp;
+            }
         }
         validate_and_set_config_integer!(
             "max-connections",
             max_connections,
             max_connections_validator
         );
-        let key = "listen-address";
-        if candidates.contains_key(key)
-            && self.config.listen_address == self.default_config.listen_address
         {
-            let tmp = candidates[key].to_owned();
-            yaskkserv2::command_line::Yaskkserv2CommandLine::listen_address_validator(
-                tmp.to_owned(),
-            )?;
-            self.config.listen_address = tmp;
+            let key = "listen-address";
+            if candidates.contains_key(key)
+                && self.config.listen_address == self.default_config.listen_address
+            {
+                let tmp = candidates[key].to_owned();
+                yaskkserv2::command_line::Yaskkserv2CommandLine::listen_address_validator(
+                    tmp.to_owned(),
+                )?;
+                self.config.listen_address = tmp;
+            }
         }
-        let key = "hostname-and-ip-address-for-protocol-3";
-        if candidates.contains_key(key)
-            && self.config.hostname_and_ip_address_for_protocol_3
-                == self.default_config.hostname_and_ip_address_for_protocol_3
         {
-            let tmp = candidates[key].to_owned();
-            yaskkserv2::command_line::Yaskkserv2CommandLine::hostname_and_ip_address_address_validator(
+            let key = "hostname-and-ip-address-for-protocol-3";
+            if candidates.contains_key(key)
+                && self.config.hostname_and_ip_address_for_protocol_3
+                    == self.default_config.hostname_and_ip_address_for_protocol_3
+            {
+                let tmp = candidates[key].to_owned();
+                yaskkserv2::command_line::Yaskkserv2CommandLine::hostname_and_ip_address_address_validator(
                 tmp.to_owned(),
             )?;
-            self.config.hostname_and_ip_address_for_protocol_3 = tmp;
+                self.config.hostname_and_ip_address_for_protocol_3 = tmp;
+            }
         }
         validate_and_set_config_integer!(
             "google-timeout-milliseconds",
             google_timeout_milliseconds,
             google_timeout_milliseconds_validator
         );
-        let key = "google-cache-filename";
-        if candidates.contains_key(key)
-            && self.config.google_cache_full_path == self.default_config.google_cache_full_path
         {
-            let tmp = candidates[key].to_owned();
-            self.config.google_cache_full_path = tmp;
+            let key = "google-cache-filename";
+            if candidates.contains_key(key)
+                && self.config.google_cache_full_path == self.default_config.google_cache_full_path
+            {
+                let tmp = candidates[key].to_owned();
+                self.config.google_cache_full_path = tmp;
+            }
         }
         validate_and_set_config_integer!(
             "google-cache-entries",
@@ -155,19 +169,22 @@ impl Yaskkserv2ConfigFile {
             max_server_completions,
             max_server_completions_validator
         );
-        let key = "google-japanese-input";
-        if candidates.contains_key(key)
-            && self.config.google_timing == self.default_config.google_timing
         {
-            let tmp = candidates[key].to_owned();
-            let timing = match &tmp[..] {
-                "notfound" => GoogleTiming::NotFound,
-                "disable" => GoogleTiming::Disable,
-                "last" => GoogleTiming::Last,
-                "first" => GoogleTiming::First,
-                _ => GoogleTiming::NotFound,
-            };
-            self.config.google_timing = timing;
+            let key = "google-japanese-input";
+            if candidates.contains_key(key)
+                && self.config.google_timing == self.default_config.google_timing
+            {
+                let tmp = candidates[key].to_owned();
+                #[allow(clippy::match_same_arms)]
+                let timing = match &tmp[..] {
+                    "notfound" => GoogleTiming::NotFound,
+                    "disable" => GoogleTiming::Disable,
+                    "last" => GoogleTiming::Last,
+                    "first" => GoogleTiming::First,
+                    _ => GoogleTiming::NotFound,
+                };
+                self.config.google_timing = timing;
+            }
         }
         validate_and_set_config_google_bool!("google-use-http", is_http_enabled);
         validate_and_set_config_google_bool!("google-suggest", is_google_suggest_enabled);

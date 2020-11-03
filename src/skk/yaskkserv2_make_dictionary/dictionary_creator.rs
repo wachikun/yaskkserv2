@@ -1,4 +1,14 @@
-use crate::skk::yaskkserv2_make_dictionary::*;
+use crate::skk::yaskkserv2_make_dictionary::{
+    BlockInformationOffsetLength, Config, Dictionary, DictionaryBlockHeads,
+    DictionaryBlockInformation, DictionaryCreator, DictionaryFixedHeader, Encoding,
+    IndexDataHeader, IndexDataHeaderBlockHeader, JisyoReader, OpenOptions, Sha1, SkkError,
+    TemporaryBlockMap, ToFromNeBytes, Write, Yaskkserv2MakeDictionary, BLOCK_ALIGNMENT_LENGTH,
+    DICTIONARY_BLOCK_UNIT_LENGTH, DICTIONARY_FIXED_HEADER_AREA_LENGTH, DICTIONARY_VERSION,
+    HEADER_ALIGNMENT_LENGTH, INDEX_DATA_BLOCK_LENGTH, SHA1SUM_ZERO,
+};
+
+#[cfg(feature = "assert_paranoia")]
+use crate::{const_assert, const_assert_eq, const_panic};
 
 struct CreateIndexDataResult {
     index_data_header: Vec<u8>,
@@ -8,7 +18,7 @@ struct CreateIndexDataResult {
 
 impl DictionaryCreator {
     pub(in crate::skk) fn create(
-        config: Config,
+        config: &Config,
         encoding_table: &[u8],
         jisyo_full_paths: &[String],
     ) -> Result<(), SkkError> {
@@ -32,10 +42,8 @@ impl DictionaryCreator {
             &mut hasher,
             &dictionary_fixed_header_area,
             encoding_table,
-            &create_index_data_result.index_data_header,
-            &create_index_data_result.index_data,
+            &create_index_data_result,
             blocks_padding_length,
-            &create_index_data_result.blocks,
         )?;
         Self::write_hash(
             &config.dictionary_full_path,
@@ -48,7 +56,8 @@ impl DictionaryCreator {
         Ok(())
     }
 
-    fn create_dictionary_fixed_header(
+    #[allow(clippy::cast_possible_truncation)]
+    const fn create_dictionary_fixed_header(
         encoding_table_length: usize,
         index_data_header_length: usize,
         index_data_length: usize,
@@ -61,33 +70,34 @@ impl DictionaryCreator {
             + index_data_length) as u32;
         let aligned_blocks_offset = Self::get_header_aligned_length(raw_blocks_offset);
         let blocks_padding_length = aligned_blocks_offset - raw_blocks_offset;
-        let mut dictionary_fixed_header = DictionaryFixedHeader::new();
         let encoding_table_offset = DICTIONARY_FIXED_HEADER_AREA_LENGTH as usize;
         let index_data_header_offset = encoding_table_offset + encoding_table_length;
         let index_data_offset = index_data_header_offset + index_data_header_length;
         let dictionary_length = aligned_blocks_offset as usize + blocks_length;
         #[cfg(feature = "assert_paranoia")]
         {
-            assert_eq!(
+            const_assert_eq!(
                 index_data_offset,
                 encoding_table_offset + encoding_table_length + index_data_header_length
             );
         }
-        dictionary_fixed_header.setup(
-            DICTIONARY_VERSION,
-            encoding_table_offset as u32,
-            encoding_table_length as u32,
-            index_data_header_offset as u32,
-            index_data_header_length as u32,
-            index_data_offset as u32,
-            index_data_length as u32,
-            aligned_blocks_offset,
-            blocks_length as u32,
-            dictionary_length as u32,
-            encoding,
-            SHA1SUM_ZERO,
-        );
-        (dictionary_fixed_header, blocks_padding_length)
+        (
+            DictionaryFixedHeader {
+                dictionary_version: DICTIONARY_VERSION,
+                encoding_table_offset: encoding_table_offset as u32,
+                encoding_table_length: encoding_table_length as u32,
+                index_data_header_offset: index_data_header_offset as u32,
+                index_data_header_length: index_data_header_length as u32,
+                index_data_offset: index_data_offset as u32,
+                index_data_length: index_data_length as u32,
+                blocks_offset: aligned_blocks_offset,
+                blocks_length: blocks_length as u32,
+                dictionary_length: dictionary_length as u32,
+                encoding: encoding as u32,
+                sha1sum: SHA1SUM_ZERO,
+            },
+            blocks_padding_length,
+        )
     }
 
     fn print_verbose(
@@ -136,6 +146,7 @@ impl DictionaryCreator {
         Ok(max_entry_length)
     }
 
+    #[allow(clippy::cast_possible_truncation)]
     fn get_dictionary_block_informations(
         block_buffer: &[u8],
         blocks_len: usize,
@@ -173,9 +184,9 @@ impl DictionaryCreator {
                 if let Some(rfind) =
                     twoway::rfind_bytes(&block_buffer[..(offset + unit_length)], b"\n")
                 {
-                    aligned_block.extend_from_slice(&block_buffer[offset..rfind]);
                     const START_LF_LENGTH: usize = 1;
                     const END_LF_LENGTH: usize = 1;
+                    aligned_block.extend_from_slice(&block_buffer[offset..rfind]);
                     dictionary_block_informations.push(DictionaryBlockInformation {
                         midashi: block_buffer[(offset + START_LF_LENGTH)..(offset + find)].to_vec(),
                         offset: (blocks_len + offset) as u32,
@@ -277,6 +288,7 @@ impl DictionaryCreator {
         Ok(temporary_block_map)
     }
 
+    #[allow(clippy::cast_possible_truncation)]
     fn create_index_data(
         jisyo_full_paths: &[String],
         output_encoding: Encoding,
@@ -373,24 +385,21 @@ impl DictionaryCreator {
         })
     }
 
-    fn get_block_aligned_length(length: u32) -> u32 {
+    const fn get_block_aligned_length(length: u32) -> u32 {
         length + (BLOCK_ALIGNMENT_LENGTH - (length % BLOCK_ALIGNMENT_LENGTH))
     }
 
-    fn get_header_aligned_length(length: u32) -> u32 {
+    const fn get_header_aligned_length(length: u32) -> u32 {
         length + (HEADER_ALIGNMENT_LENGTH - (length % HEADER_ALIGNMENT_LENGTH))
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn write_and_calculate_hash(
         dictionary_full_path: &str,
         hasher: &mut Sha1,
         dictionary_fixed_header_area: &[u8; DICTIONARY_FIXED_HEADER_AREA_LENGTH as usize],
         encoding_table: &[u8],
-        index_data_header: &[u8],
-        index_data: &[u8],
+        create_index_data_result: &CreateIndexDataResult,
         blocks_padding_length: u32,
-        blocks: &[u8],
     ) -> Result<(), SkkError> {
         let mut writer = OpenOptions::new()
             .create(true)
@@ -401,15 +410,15 @@ impl DictionaryCreator {
         hasher.update(dictionary_fixed_header_area);
         writer.write_all(encoding_table)?;
         hasher.update(encoding_table);
-        writer.write_all(&index_data_header)?;
-        hasher.update(&index_data_header);
-        writer.write_all(&index_data)?;
-        hasher.update(&index_data);
+        writer.write_all(&create_index_data_result.index_data_header)?;
+        hasher.update(&create_index_data_result.index_data_header);
+        writer.write_all(&create_index_data_result.index_data)?;
+        hasher.update(&create_index_data_result.index_data);
         let padding = vec![0; blocks_padding_length as usize];
         writer.write_all(&padding)?;
         hasher.update(&padding);
-        writer.write_all(&blocks)?;
-        hasher.update(&blocks);
+        writer.write_all(&create_index_data_result.blocks)?;
+        hasher.update(&create_index_data_result.blocks);
         writer.flush()?;
         Ok(())
     }

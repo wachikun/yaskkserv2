@@ -22,8 +22,9 @@ static UTF8_JISYO_FULL_PATHS: once_cell::sync::Lazy<RwLock<Vec<String>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
 static TEST_RUNNING_COUNT: once_cell::sync::Lazy<RwLock<usize>> =
     once_cell::sync::Lazy::new(|| RwLock::new(0));
-static PANIC_DEFAULT_HOOK: once_cell::sync::Lazy<RwLock<Box<dyn Fn(&std::panic::PanicInfo<'_>) + 'static + Sync + Send>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(std::panic::take_hook()));
+static PANIC_DEFAULT_HOOK: once_cell::sync::Lazy<
+    RwLock<Box<dyn Fn(&std::panic::PanicInfo<'_>) + 'static + Sync + Send>>,
+> = once_cell::sync::Lazy::new(|| RwLock::new(std::panic::take_hook()));
 static PANIC_THREAD_NAME_SET: once_cell::sync::Lazy<RwLock<FxHashSet<String>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(FxHashSet::default()));
 
@@ -331,7 +332,7 @@ struct OnceInit {}
 impl OnceInit {
     fn create_dictionary(config: Config, jisyo_full_paths: &[String]) {
         Yaskkserv2MakeDictionary::run_create_dictionary(
-            config,
+            &config,
             &encoding_simple::EncodingTable::get(),
             &jisyo_full_paths,
         )
@@ -339,7 +340,7 @@ impl OnceInit {
     }
 
     fn create_jisyo(config: Config, jisyo_full_paths: &str) {
-        Yaskkserv2MakeDictionary::run_create_jisyo(config, jisyo_full_paths).unwrap();
+        Yaskkserv2MakeDictionary::run_create_jisyo(&config, jisyo_full_paths).unwrap();
     }
 
     fn convert_dictionary_and_jisyo(config: &Config, jisyo_full_paths: &[String]) {

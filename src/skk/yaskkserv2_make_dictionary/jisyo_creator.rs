@@ -1,9 +1,13 @@
 use crate::skk::yaskkserv2::DictionaryReader;
-use crate::skk::yaskkserv2_make_dictionary::*;
+use crate::skk::yaskkserv2_make_dictionary::{
+    encoding_simple, BTreeMap, BufWriter, Candidates, Config, Dictionary,
+    DictionaryBlockInformation, Encoding, File, JisyoCreator, OnMemory, OpenOptions, Read, Seek,
+    SkkError, Write, SHA1_READ_BUFFER_LENGTH,
+};
 
 impl JisyoCreator {
     pub(in crate::skk) fn create(
-        config: Config,
+        config: &Config,
         output_jisyo_full_path: &str,
     ) -> Result<(), SkkError> {
         let mut reader = File::open(&config.dictionary_full_path)?;
@@ -56,7 +60,7 @@ impl JisyoCreator {
                 .1
                 .iter()
                 .skip(EXPIRE_SECONDS_SKIP_LENGTH)
-                .flat_map(|v| Candidates::quote_and_add_prefix(&v, Some(b'/')))
+                .flat_map(|v| Candidates::quote_and_add_prefix(v, Some(b'/')))
                 .collect::<Vec<u8>>();
             let (midashi, mut candidates) = if output_jisyo_encoding == Encoding::Euc {
                 (
@@ -169,7 +173,7 @@ impl JisyoCreator {
                 } else {
                     encoding_simple::Euc::decode(euc_midashi_slice)?
                 };
-                if DictionaryReader::is_okuri_ari(&euc_midashi_slice) {
+                if DictionaryReader::is_okuri_ari(euc_midashi_slice) {
                     okuri_ari_map.insert(midashi, candidates);
                 } else {
                     okuri_nasi_map.insert(midashi, candidates);

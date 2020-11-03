@@ -1,15 +1,21 @@
 use regex::Regex;
 
 use crate::skk::yaskkserv2::MAX_CONNECTION;
-use crate::skk::*;
+use crate::skk::{
+    Config, GoogleTiming, SkkError, DEFAULT_CONFIG_FULL_PATH, DEFAULT_GOOGLE_CACHE_ENTRIES,
+    DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS, DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH,
+    DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS, DEFAULT_HOSTNAME_AND_IP_ADDRESS_FOR_PROTOCOL_3,
+    DEFAULT_LISTEN_ADDRESS, DEFAULT_MAX_CONNECTIONS, DEFAULT_MAX_SERVER_COMPLETIONS, DEFAULT_PORT,
+    PKG_VERSION,
+};
 
 pub(in crate::skk) struct Yaskkserv2CommandLine {
     config: Config,
 }
 
 impl Yaskkserv2CommandLine {
-    pub(in crate::skk) fn new() -> Yaskkserv2CommandLine {
-        Yaskkserv2CommandLine {
+    pub(in crate::skk) fn new() -> Self {
+        Self {
             config: Config::new(),
         }
     }
@@ -57,16 +63,16 @@ impl Yaskkserv2CommandLine {
             .arg(clap::Arg::from_usage("--google-cache-filename=[FILENAME] 'google cache filename (default: disable)'"))
             .arg(clap::Arg::from_usage("--google-cache-entries=[ENTRIES] 'google cache entries'")
                  .validator(Self::google_cache_entries_validator)
-                 .default_value(&default_google_cache_entries))
+                 .default_value(default_google_cache_entries))
             .arg(clap::Arg::from_usage("--google-cache-expire-seconds=[SECONDS] 'google cache expire seconds'")
                  .validator(Self::google_cache_expire_seconds_validator)
-                 .default_value(&default_google_cache_expire_seconds))
+                 .default_value(default_google_cache_expire_seconds))
             .arg(clap::Arg::from_usage("--google-max-candidates-length=[LENGTH] 'google max candidates length'")
                  .validator(Self::google_max_candidates_length_validator)
-                 .default_value(&default_google_max_candidates_length))
+                 .default_value(default_google_max_candidates_length))
             .arg(clap::Arg::from_usage("--max-server-completions=[MAX] 'max server completions'")
                  .validator(Self::max_server_completions_validator)
-                 .default_value(&default_max_server_completions))
+                 .default_value(default_max_server_completions))
             .arg(clap::Arg::from_usage("--google-japanese-input=[TIMING] 'enable google japanese input (default: notfound)'")
                  .possible_values(&["notfound", "disable", "last", "first"]))
             .arg(clap::Arg::from_usage("--google-suggest 'enable google suggest'"))
@@ -84,66 +90,79 @@ impl Yaskkserv2CommandLine {
         Ok(result_is_help_exit || result_is_exit)
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub(in crate::skk) fn dictionary_validator(value: String) -> Result<(), String> {
-        if !std::path::Path::new(&value).exists() {
-            Err(format!(r#"dictionary "{}" not found"#, &value))
-        } else {
+        if std::path::Path::new(&value).exists() {
             Ok(())
+        } else {
+            Err(format!(r#"dictionary "{}" not found"#, &value))
         }
     }
 
-    pub(in crate::skk) fn port_validator(val: String) -> Result<(), String> {
-        Self::range_validator::<i32>(val, "illegal port number", 0, 65535)
+    #[allow(clippy::needless_pass_by_value)]
+    pub(in crate::skk) fn port_validator(value: String) -> Result<(), String> {
+        Self::range_validator::<i32>(value, "illegal port number", 0, 65535)
     }
 
-    pub(in crate::skk) fn max_connections_validator(val: String) -> Result<(), String> {
+    #[allow(
+        clippy::needless_pass_by_value,
+        clippy::clippy::cast_possible_wrap,
+        clippy::cast_possible_truncation
+    )]
+    pub(in crate::skk) fn max_connections_validator(value: String) -> Result<(), String> {
         Self::range_validator::<i32>(
-            val,
+            value,
             "illegal max connection range",
             1,
             MAX_CONNECTION as i32,
         )
     }
 
-    pub(in crate::skk) fn listen_address_validator(val: String) -> Result<(), String> {
-        if val.parse::<std::net::IpAddr>().is_ok() {
+    #[allow(clippy::needless_pass_by_value)]
+    pub(in crate::skk) fn listen_address_validator(value: String) -> Result<(), String> {
+        if value.parse::<std::net::IpAddr>().is_ok() {
             Ok(())
         } else {
             Err(String::from("illegal listen address"))
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub(in crate::skk) fn hostname_and_ip_address_address_validator(
-        val: String,
+        value: String,
     ) -> Result<(), String> {
         let re_ascii = Regex::new(r"^[\x21-\x7e]+$").unwrap();
-        if re_ascii.is_match(&val) {
+        if re_ascii.is_match(&value) {
             Ok(())
         } else {
             Err(String::from("illegal hostname/IP"))
         }
     }
 
-    pub(in crate::skk) fn google_timeout_milliseconds_validator(val: String) -> Result<(), String> {
-        Self::range_validator::<u64>(val, "illegal timeout milliseconds", 0, 5 * 60 * 1000)
+    pub(in crate::skk) fn google_timeout_milliseconds_validator(
+        value: String,
+    ) -> Result<(), String> {
+        Self::range_validator::<u64>(value, "illegal timeout milliseconds", 0, 5 * 60 * 1000)
     }
 
-    pub(in crate::skk) fn google_cache_entries_validator(val: String) -> Result<(), String> {
-        Self::range_validator::<usize>(val, "illegal cache entries", 1, 1024 * 1024)
+    pub(in crate::skk) fn google_cache_entries_validator(value: String) -> Result<(), String> {
+        Self::range_validator::<usize>(value, "illegal cache entries", 1, 1024 * 1024)
     }
 
-    pub(in crate::skk) fn google_cache_expire_seconds_validator(val: String) -> Result<(), String> {
-        Self::range_validator::<u64>(val, "illegal expire seconds", 1, 100 * 365 * 24 * 60 * 60)
+    pub(in crate::skk) fn google_cache_expire_seconds_validator(
+        value: String,
+    ) -> Result<(), String> {
+        Self::range_validator::<u64>(value, "illegal expire seconds", 1, 100 * 365 * 24 * 60 * 60)
     }
 
     pub(in crate::skk) fn google_max_candidates_length_validator(
-        val: String,
+        value: String,
     ) -> Result<(), String> {
-        Self::range_validator::<u64>(val, "illegal candidates length", 1, 1024)
+        Self::range_validator::<u64>(value, "illegal candidates length", 1, 1024)
     }
 
-    pub(in crate::skk) fn max_server_completions_validator(val: String) -> Result<(), String> {
-        Self::range_validator::<i32>(val, "illegal max server completions", 1, 64 * 1024)
+    pub(in crate::skk) fn max_server_completions_validator(value: String) -> Result<(), String> {
+        Self::range_validator::<i32>(value, "illegal max server completions", 1, 64 * 1024)
     }
 
     pub(in crate::skk) fn parse_integer<T: std::str::FromStr>(
@@ -157,6 +176,7 @@ impl Yaskkserv2CommandLine {
         })
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub(in crate::skk) fn range_validator<T: std::str::FromStr + std::cmp::PartialOrd>(
         value: String,
         message: &str,

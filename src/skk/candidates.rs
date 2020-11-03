@@ -1,16 +1,13 @@
-use crate::skk::*;
+use rustc_hash::FxHashSet;
+
+use crate::skk::Candidates;
 
 impl Candidates {
     #[allow(dead_code)]
     pub(in crate::skk) fn need_quote(source: &[u8]) -> bool {
         for u in source {
             match u {
-                b'\r' => return true,
-                b'\n' => return true,
-                b'\\' => return true,
-                b'\"' => return true,
-                b';' => return true,
-                b'/' => return true,
+                b'\r' | b'\n' | b'\\' | b'\"' | b';' | b'/' => return true,
                 _ => {}
             }
         }
@@ -24,8 +21,7 @@ impl Candidates {
         }
         for u in source {
             match u {
-                b'\r' => {}
-                b'\n' => {}
+                b'\r' | b'\n' => {}
                 b'\\' => result.extend_from_slice(br#"\\"#),
                 b'\"' => result.extend_from_slice(br#"\""#),
                 b';' => result.extend_from_slice(br#"(concat "\073")"#),
@@ -36,25 +32,24 @@ impl Candidates {
         result
     }
 
-    /// 先端と終端の b'/' を 1 つだけ trim する
+    /// 先端と終端の `b'/'` を 1 つだけ trim する
     ///
-    /// trim_matches(b'/') とは異なり、連続した b'/' が存在しても刈り取られるのは先端と終端の
+    /// `trim_matches(b'/')` とは異なり、連続した `b'/'` が存在しても刈り取られるのは先端と終端の
     /// 1 つだけであることに注意。
-    #[inline(always)]
     pub(in crate::skk) fn trim_one_slash(source: &[u8]) -> &[u8] {
         let mut end = source.len();
         if end > 1 && source[end - 1] == b'/' {
             end -= 1;
         } else if end == 0 {
-            return &source;
+            return source;
         }
         let start = if source[0] == b'/' { 1 } else { 0 };
         &source[start..end]
     }
 
-    /// trim_matches(b'/') された candidates をマージする
+    /// `trim_matches(b'/')` された candidates をマージする
     ///
-    /// b"aa/bbb/cc" のように、引数の先端と終端に b'/' が含まれてはならないことに注意。
+    /// `b"aa/bbb/cc"` のように、引数の先端と終端に `b'/'` が含まれてはならないことに注意。
     ///
     /// かなり重い処理なのでタイトな部分では下記のように処理を分けて考える必要がある。
     ///
@@ -63,8 +58,8 @@ impl Candidates {
     /// 3. annotate がある場合は面倒な merge
     ///    (重いが annotate が含まれる candidates は多くない)
     ///
-    /// merge する必要が無い場合、すなわち base_candidates が空ならば本メソッドを呼ばずに
-    /// new_candidates で上書きしてやればよい。
+    /// merge する必要が無い場合、すなわち `base_trimmed_slash_candidates` が空ならば本メソッドを呼ばずに
+    /// `new_trimmed_slash_candidates` で上書きしてやればよい。
     pub(in crate::skk) fn merge_trimmed_slash_candidates(
         base_trimmed_slash_candidates: &[u8],
         new_trimmed_slash_candidates: &[u8],
@@ -97,7 +92,7 @@ impl Candidates {
             let mut result_vec = vec![b'/'];
             if !base_trimmed_slash_candidates.is_empty() {
                 for base_unit in base_trimmed_slash_candidates.split(|v| *v == b'/') {
-                    result_vec.extend_from_slice(&base_unit);
+                    result_vec.extend_from_slice(base_unit);
                     result_vec.push(b'/');
                     if let Some(new_unit) =
                         new_raw_and_add_flag.iter_mut().find(|v| v.0 == base_unit)
@@ -107,7 +102,7 @@ impl Candidates {
                 }
             }
             for new_unit in new_raw_and_add_flag.iter().filter(|v| v.1) {
-                result_vec.extend_from_slice(&new_unit.0);
+                result_vec.extend_from_slice(new_unit.0);
                 result_vec.push(b'/');
             }
             result_vec
@@ -127,9 +122,9 @@ impl Candidates {
             .collect::<Vec<T>>()
     }
 
-    /// b'/' で区切られた candidates_bytes から重複した candidate を取り除いた bytes を返す
+    /// `b'/'` で区切られた `candidates_bytes` から重複した candidate を取り除いた bytes を返す
     ///
-    /// b"/aa/bbb/cc/" のように、引数の先端と終端に b'/' が含まれている必要があることに注意。
+    /// `b"/aa/bbb/cc/"` のように、引数の先端と終端に `b'/'` が含まれている必要があることに注意。
     pub(in crate::skk) fn remove_duplicates_bytes(candidates_bytes: &[u8]) -> Vec<u8> {
         #[cfg(feature = "assert_paranoia")]
         {
@@ -171,9 +166,9 @@ impl Candidates {
         result
     }
 
-    /// annotate 付きの trim_matches(b'/') された candidates をマージする
+    /// annotate 付きの `trim_matches(b'/')` された candidates をマージする
     ///
-    /// b"aa/bbb/cc" のように、引数の先端と終端に b'/' が含まれてはならないことに注意。
+    /// `b"aa/bbb/cc"` のように、引数の先端と終端に `b'/'` が含まれてはならないことに注意。
     ///
     /// 遅いので可能な限り呼び出しを避けること。
     fn merge_annotated_trimmed_slash_candidates(
@@ -195,11 +190,9 @@ impl Candidates {
         let mut new_raw_and_annotate_removed_and_add_flag = new_trimmed_slash_candidates
             .split(|v| *v == b'/')
             .map(|v| {
-                if let Some(find) = v.iter().position(|t| *t == b';') {
-                    (v, &v[..find], true)
-                } else {
-                    (v, v, true)
-                }
+                v.iter()
+                    .position(|t| *t == b';')
+                    .map_or((v, v, true), |find| (v, &v[..find], true))
             })
             .collect::<Vec<(&[u8], &[u8], bool)>>();
         let mut result_vec: Vec<u8> = vec![b'/'];
@@ -208,11 +201,9 @@ impl Candidates {
             for base_unit in base_trimmed_slash_candidates
                 .split(|v| *v == b'/')
                 .map(|v| {
-                    if let Some(find) = v.iter().position(|t| *t == b';') {
-                        (v, &v[..find])
-                    } else {
-                        (v, v)
-                    }
+                    v.iter()
+                        .position(|t| *t == b';')
+                        .map_or((v, v), |find| (v, &v[..find]))
                 })
             {
                 if let Some(new_unit) = new_raw_and_annotate_removed_and_add_flag

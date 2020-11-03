@@ -2,9 +2,9 @@
 //!
 //! # はじめに
 //!
-//! SKK server 本体。 yaskkserv2_make_dictionary で作成した dictionary を使用する。
+//! SKK server 本体。 `yaskkserv2_make_dictionary` で作成した dictionary を使用する。
 //!
-//! yaskkserv2_make_dictionary に比べるとメモリなどのリソースを抑えて使用する。ファイルは
+//! `yaskkserv2_make_dictionary` に比べるとメモリなどのリソースを抑えて使用する。ファイルは
 //! 一気読みせず、メモリに保持するデータも限定的。実行速度も重要となるため、ヒープや map の
 //! 使用も最低限に抑えてある (現代的な Rust が動作がするような環境に対して、いささか神経質に
 //! なり過ぎかもしれない)。
@@ -24,7 +24,6 @@ pub(in crate::skk) mod test_unix;
 use log::*;
 use mio::tcp::{TcpListener, TcpStream};
 use mio::{Events, Poll, PollOpt, Ready, Token};
-use regex::Regex;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek, Write};
@@ -33,7 +32,16 @@ use std::sync::RwLock;
 #[cfg(all(not(test), unix))]
 use syslog::{Facility, Formatter3164};
 
-use crate::skk::*;
+#[cfg(not(test))]
+use crate::skk::PKG_NAME;
+use crate::skk::{
+    encoding_simple, Candidates, Config, Dictionary, DictionaryBlockInformation,
+    DictionaryMidashiKey, Encoding, GoogleTiming, OnMemory, SkkError, GOOGLE_JAPANESE_INPUT_URL,
+    GOOGLE_SUGGEST_URL, PKG_VERSION, PROTOCOL_RESULT_ERROR, SHA1SUM_LENGTH,
+};
+
+#[cfg(feature = "assert_paranoia")]
+use crate::{const_assert, const_panic};
 
 #[cfg(test)]
 use crate::skk::test_unix::DEBUG_FORCE_EXIT_DIRECTORY;
@@ -74,8 +82,8 @@ pub(in crate::skk) struct DictionaryFile {
 }
 
 impl DictionaryFile {
-    pub(in crate::skk) fn new(file: File, buffer_length: usize) -> DictionaryFile {
-        DictionaryFile {
+    pub(in crate::skk) fn new(file: File, buffer_length: usize) -> Self {
+        Self {
             file,
             seek_position: 0,
             read_length: 0,
@@ -102,8 +110,8 @@ struct MioSocket {
 }
 
 impl MioSocket {
-    fn new(stream: TcpStream) -> MioSocket {
-        MioSocket {
+    fn new(stream: TcpStream) -> Self {
+        Self {
             buffer_stream: BufReader::new(stream),
         }
     }
@@ -172,12 +180,14 @@ impl BufReaderSkk for BufReader<TcpStream> {
                     Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
                     Err(e) => return Err(e),
                 };
-                match twoway::find_bytes(&available, b" ") {
+                match twoway::find_bytes(available, b" ") {
                     Some(i) => {
                         buf.extend_from_slice(&available[..=i]);
                         (true, i + 1)
                     }
-                    None => {
+                    None =>
+                    {
+                        #[allow(clippy::option_if_let_else)]
                         if let Some(i) = find_one_character_protocol(available) {
                             buf.extend_from_slice(&available[..=i]);
                             (true, i + 1)
@@ -212,9 +222,117 @@ pub(in crate::skk) struct Yaskkserv2 {
     pub(in crate::skk) is_debug_force_exit_mode: bool,
 }
 
+macro_rules! run_loop_listener {
+    ($self: expr,
+     $next_socket_index: expr,
+     $sockets: expr,
+     $sockets_some_count: expr,
+     $poll: expr,
+     $_take_index_for_test: expr,
+     $listener: expr,
+     $sockets_length: expr) => {
+        match $listener.accept() {
+            Ok((socket, _)) => {
+                #[allow(clippy::cast_sign_loss)]
+                if $sockets_some_count >= $self.server.config.max_connections as usize {
+                    break;
+                }
+                #[cfg(test)]
+                {
+                    $_take_index_for_test += 1;
+                }
+                let token = Token($next_socket_index);
+                $poll.register(&socket, token, Ready::readable(), PollOpt::edge())?;
+                $sockets[usize::from(token)] = Some(MioSocket::new(socket));
+                $sockets_some_count += 1;
+                #[allow(clippy::cast_sign_loss)]
+                if $sockets_some_count < $self.server.config.max_connections as usize {
+                    $next_socket_index = Self::get_empty_sockets_index(
+                        &$sockets,
+                        $sockets_length,
+                        $next_socket_index,
+                    );
+                }
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                break;
+            }
+            Err(e) => return Err(SkkError::Io(e)),
+        }
+    };
+}
+
+macro_rules! run_loop_token {
+    ($self: expr,
+     $next_socket_index: expr,
+     $sockets: expr,
+     $sockets_some_count: expr,
+     $poll: expr,
+     $_take_index_for_test: expr,
+     $_take_count_for_test: expr,
+     $token: expr,
+     $buffer: expr,
+     $dictionary_file: expr) => {
+        #[allow(clippy::get_unwrap)]
+        let socket = match $sockets.get_mut(usize::from($token)).unwrap() {
+            Some(socket) => socket,
+            None => {
+                let message = "sockets get failed";
+                Self::log_error(message);
+                Self::print_warning(message);
+                return Ok(());
+            }
+        };
+        let mut is_shutdown = false;
+        match $self.read_until_skk_server(
+            socket,
+            &mut $buffer,
+            &mut $dictionary_file,
+            &mut is_shutdown,
+        ) {
+            HandleClientResult::Continue => {}
+            HandleClientResult::Exit => {
+                $poll.deregister(socket.buffer_stream.get_mut())?;
+                if is_shutdown {
+                    if let Err(e) = &socket.buffer_stream.get_mut().shutdown(Shutdown::Both) {
+                        Self::log_error(&format!("shutdown error={}", e));
+                    }
+                }
+                $sockets[usize::from($token)] = None;
+                $sockets_some_count -= 1;
+                $next_socket_index = usize::from($token);
+                #[cfg(test)]
+                {
+                    if $_take_count_for_test > 0
+                        && $sockets_some_count == 0
+                        && $_take_index_for_test >= $_take_count_for_test
+                    {
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        #[cfg(test)]
+        {
+            if $self.is_debug_force_exit_mode {
+                if std::env::var("YASKKSERV2_TEST_DIRECTORY").is_ok() {
+                    let debug_force_exit_directory_full_path =
+                        std::path::Path::new(&std::env::var("YASKKSERV2_TEST_DIRECTORY").unwrap())
+                            .join(DEBUG_FORCE_EXIT_DIRECTORY);
+                    if debug_force_exit_directory_full_path.exists() {
+                        std::fs::remove_dir(&debug_force_exit_directory_full_path).unwrap();
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        $buffer.clear();
+    };
+}
+
 impl Yaskkserv2 {
-    pub(in crate::skk) fn new() -> Yaskkserv2 {
-        Yaskkserv2 {
+    pub(in crate::skk) fn new() -> Self {
+        Self {
             server: Server::new(),
             #[cfg(test)]
             is_debug_force_exit_mode: false,
@@ -244,12 +362,12 @@ impl Yaskkserv2 {
         }
     }
 
-    /// read_candidates() や read_abbrev() など、 b'1' や b'4' からはじまる candidates を返す
-    /// ものは空の場合でも len() == 0 とならないので、本関数で空かどうか判定する。
-    fn is_empty_candidates(candidates: &[u8]) -> bool {
+    /// `read_candidates()` や `read_abbrev()` など、 `b'1'` や `b'4'` からはじまる candidates を返す
+    /// ものは空の場合でも `len() == 0` とならないので、本関数で空かどうか判定する。
+    const fn is_empty_candidates(candidates: &[u8]) -> bool {
         #[cfg(feature = "assert_paranoia")]
         {
-            assert!(candidates[0] == b'1' || candidates[0] == b'4');
+            const_assert!(candidates[0] == b'1' || candidates[0] == b'4');
         }
         candidates.len() == 1
     }
@@ -257,6 +375,7 @@ impl Yaskkserv2 {
     /// empty な index を取得する
     ///
     /// # Panics
+    ///
     /// index が見付からない場合、 panic!() することに注意。
     fn get_empty_sockets_index(
         sockets: &[Option<MioSocket>],
@@ -283,15 +402,14 @@ impl Yaskkserv2 {
         panic!("illegal sockets slice");
     }
 
-    /// ロジックやエラー処理の関係上、他に比べて長い関数なので注意
-    ///
-    /// sockets に HashMap ではなく Vec を使用する理由は、常に実行される sockets.get_mut()
-    /// の速度を重視するため。 Vec は HashMap に比べて empty index を探す必要がある分だけ
-    /// insert() 相当の処理が少しだけ高くつくが、最悪のケースでもそもそも実行頻度が低いので
-    /// 問題にならない。
+    /// sockets に `HashMap` ではなく `Vec` を使用する理由は、常に実行される `sockets.get_mut()`
+    /// の速度を重視するため。
+    /// なお、 `Vec` は `HashMap` に比べて empty index を探す必要がある分だけ `insert()` 相当の
+    /// 処理が少しだけ高くつくが、最悪のケースでもそもそも `insert()` 相当処理の実行頻度は
+    /// 低いので問題にならない。
     fn run_loop(&mut self, _take_count_for_test: usize) -> Result<(), SkkError> {
-        let mut _take_index_for_test = 0;
         const LISTENER: Token = Token(MAX_CONNECTION);
+        let mut _take_index_for_test = 0;
         let mut sockets: Vec<Option<MioSocket>> = Vec::new();
         for _ in 0..self.server.config.max_connections {
             sockets.push(None);
@@ -324,130 +442,83 @@ impl Yaskkserv2 {
             for event in &events {
                 match event.token() {
                     LISTENER => loop {
-                        match listener.accept() {
-                            Ok((socket, _)) => {
-                                if sockets_some_count >= self.server.config.max_connections as usize
-                                {
-                                    break;
-                                }
-                                #[cfg(test)]
-                                {
-                                    _take_index_for_test += 1;
-                                }
-                                let token = Token(next_socket_index);
-                                poll.register(&socket, token, Ready::readable(), PollOpt::edge())?;
-                                sockets[usize::from(token)] = Some(MioSocket::new(socket));
-                                sockets_some_count += 1;
-                                if sockets_some_count < self.server.config.max_connections as usize
-                                {
-                                    next_socket_index = Self::get_empty_sockets_index(
-                                        &sockets,
-                                        sockets_length,
-                                        next_socket_index,
-                                    );
-                                }
-                            }
-                            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                                break;
-                            }
-                            Err(e) => return Err(SkkError::Io(e)),
-                        }
+                        run_loop_listener!(
+                            self,
+                            next_socket_index,
+                            sockets,
+                            sockets_some_count,
+                            poll,
+                            _take_index_for_test,
+                            listener,
+                            sockets_length
+                        );
                     },
                     token => {
-                        let socket = match sockets.get_mut(usize::from(token)).unwrap() {
-                            Some(socket) => socket,
-                            None => {
-                                let message = "sockets get failed";
-                                Self::log_error(message);
-                                Self::print_warning(message);
-                                return Ok(());
-                            }
-                        };
-                        let mut is_shutdown = false;
-                        match match socket.buffer_stream.read_until_skk_server(&mut buffer) {
-                            Ok(0) => HandleClientResult::Exit,
-                            Ok(size) => {
-                                let skip = Self::get_buffer_skip_count(&buffer, size);
-                                if size == skip {
-                                    HandleClientResult::Exit
-                                } else if size - skip > 0 {
-                                    self.server.handle_client(
-                                        &mut socket.buffer_stream,
-                                        &mut dictionary_file,
-                                        &mut buffer[skip..],
-                                    )
-                                } else {
-                                    HandleClientResult::Continue
-                                }
-                            }
-                            Err(e) => {
-                                if e.kind() != std::io::ErrorKind::WouldBlock {
-                                    match socket.buffer_stream.get_ref().peer_addr() {
-                                        Ok(peer_addr) => Yaskkserv2::log_error(&format!(
-                                            "read_line() error={}  port={}",
-                                            peer_addr, self.server.config.port
-                                        )),
-                                        Err(e) => Yaskkserv2::log_error(&format!(
-                                            "peer_address() get failed error={}  port={}",
-                                            e, self.server.config.port
-                                        )),
-                                    };
-                                    is_shutdown = true;
-                                    HandleClientResult::Exit
-                                } else {
-                                    HandleClientResult::Continue
-                                }
-                            }
-                        } {
-                            HandleClientResult::Continue => {}
-                            HandleClientResult::Exit => {
-                                poll.deregister(socket.buffer_stream.get_mut())?;
-                                if is_shutdown {
-                                    if let Err(e) =
-                                        &socket.buffer_stream.get_mut().shutdown(Shutdown::Both)
-                                    {
-                                        Self::log_error(&format!("shutdown error={}", e));
-                                    }
-                                }
-                                sockets[usize::from(token)] = None;
-                                sockets_some_count -= 1;
-                                next_socket_index = usize::from(token);
-                                #[cfg(test)]
-                                {
-                                    if _take_count_for_test > 0
-                                        && sockets_some_count == 0
-                                        && _take_index_for_test >= _take_count_for_test
-                                    {
-                                        return Ok(());
-                                    }
-                                }
-                            }
-                        }
-                        #[cfg(test)]
-                        {
-                            if self.is_debug_force_exit_mode {
-                                if std::env::var("YASKKSERV2_TEST_DIRECTORY").is_ok() {
-                                    let debug_force_exit_directory_full_path =
-                                        std::path::Path::new(
-                                            &std::env::var("YASKKSERV2_TEST_DIRECTORY").unwrap(),
-                                        )
-                                        .join(DEBUG_FORCE_EXIT_DIRECTORY);
-                                    if debug_force_exit_directory_full_path.exists() {
-                                        std::fs::remove_dir(&debug_force_exit_directory_full_path)
-                                            .unwrap();
-                                        return Ok(());
-                                    }
-                                }
-                            }
-                        }
-                        buffer.clear();
+                        run_loop_token!(
+                            self,
+                            next_socket_index,
+                            sockets,
+                            sockets_some_count,
+                            poll,
+                            _take_index_for_test,
+                            _take_count_for_test,
+                            token,
+                            buffer,
+                            dictionary_file
+                        );
                     }
                 }
             }
         }
     }
 
-    fn get_buffer_skip_count(buffer: &[u8], size: usize) -> usize {
+    fn read_until_skk_server(
+        &mut self,
+        socket: &mut MioSocket,
+        buffer: &mut Vec<u8>,
+        dictionary_file: &mut DictionaryFile,
+        is_shutdown: &mut bool,
+    ) -> HandleClientResult {
+        match socket.buffer_stream.read_until_skk_server(buffer) {
+            Ok(0) => HandleClientResult::Exit,
+            Ok(size) => {
+                let skip = Self::get_buffer_skip_count(buffer, size);
+                if size == skip {
+                    HandleClientResult::Exit
+                } else if size - skip > 0 {
+                    self.server.handle_client(
+                        &mut socket.buffer_stream,
+                        dictionary_file,
+                        &mut buffer[skip..],
+                    )
+                } else {
+                    HandleClientResult::Continue
+                }
+            }
+            Err(e) =>
+            {
+                #[allow(clippy::if_not_else)]
+                if e.kind() != std::io::ErrorKind::WouldBlock {
+                    match socket.buffer_stream.get_ref().peer_addr() {
+                        Ok(peer_addr) => Self::log_error(&format!(
+                            "read_line() error={}  port={}",
+                            peer_addr, self.server.config.port
+                        )),
+                        Err(e) => Self::log_error(&format!(
+                            "peer_address() get failed error={}  port={}",
+                            e, self.server.config.port
+                        )),
+                    };
+                    *is_shutdown = true;
+                    HandleClientResult::Exit
+                } else {
+                    HandleClientResult::Continue
+                }
+            }
+        }
+    }
+
+    const fn get_buffer_skip_count(buffer: &[u8], size: usize) -> usize {
         if size >= 2
             && (buffer[1] == b'\n' || buffer[1] == b'\r')
             && (buffer[0] == b'\n' || buffer[0] == b'\r')
@@ -466,6 +537,7 @@ impl Yaskkserv2 {
 
     #[cfg(all(not(test), unix))]
     fn get_log_formatter() -> Formatter3164 {
+        #[allow(clippy::cast_possible_wrap)]
         Formatter3164 {
             facility: Facility::LOG_DAEMON,
             hostname: None,
@@ -534,8 +606,9 @@ struct GoogleCacheObject {
 }
 
 impl GoogleCacheObject {
-    fn new() -> GoogleCacheObject {
-        GoogleCacheObject {
+    #[allow(clippy::missing_const_for_fn)]
+    fn new() -> Self {
+        Self {
             map: BTreeMap::new(),
         }
     }
