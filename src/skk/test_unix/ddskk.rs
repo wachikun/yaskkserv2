@@ -2,15 +2,17 @@
 //!
 //! emacs を起動して ddskk から test する。 emacs が存在しない場合は何もせず成功する。
 //!
-//! ddskk 内部で lock されて止まる事があるので TEST_MUTEX_LOCK.lock() で lock し、 test を
+//! ddskk 内部で lock されて止まる事があるので `TEST_MUTEX_LOCK.lock()` で lock し、 test を
 //! 同時に走らせていないことに注意。
+
+#![allow(clippy::non_ascii_literal)]
 
 use std::fs::OpenOptions;
 use std::io::Write;
 
-use crate::skk::test_unix::*;
+use crate::skk::test_unix::{get_take_count, setup, wait_server, Path, TEST_MUTEX_LOCK};
 use crate::skk::yaskkserv2::Yaskkserv2;
-use crate::skk::*;
+use crate::skk::{Config, Encoding, GoogleTiming};
 
 use crate::skk::yaskkserv2::test_unix::Yaskkserv2Debug;
 
@@ -20,8 +22,8 @@ struct DaredevilSkk {
 }
 
 impl DaredevilSkk {
-    fn new(name: &str, config: &Config) -> DaredevilSkk {
-        DaredevilSkk {
+    fn new(name: &str, config: &Config) -> Self {
+        Self {
             name: String::from(name),
             config: config.clone(),
         }
@@ -35,7 +37,7 @@ impl DaredevilSkk {
             .write(true)
             .open(&elisp_full_path)
             .unwrap();
-        writer.write_all(&elisp_str.as_bytes()).unwrap();
+        writer.write_all(elisp_str.as_bytes()).unwrap();
         writer.flush().unwrap();
         let mut child = match std::process::Command::new("emacs")
             .arg("--script")

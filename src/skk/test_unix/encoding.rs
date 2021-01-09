@@ -1,7 +1,7 @@
 use rand::Rng;
 
-use crate::skk::test_unix::*;
-use crate::skk::*;
+use crate::skk::encoding_simple;
+use crate::skk::test_unix::{setup, BufRead, BufReader, File, Path};
 use regex::Regex;
 
 fn pack_euc(bytes: &[u8]) -> Vec<u8> {
@@ -44,6 +44,7 @@ fn encoding_simple_test() {
     );
     let mut random_bytes = Vec::new();
     for _ in 0..20000 {
+        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
         random_bytes.push(rand::thread_rng().gen_range(0, 0x100) as u8);
         let _ = encoding_simple::Euc::encode(&random_bytes).unwrap();
         let _ = encoding_simple::Euc::decode(&random_bytes).unwrap();

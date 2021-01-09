@@ -7,8 +7,11 @@ use mio::tcp::{TcpListener, TcpStream};
 use mio::{Events, Poll, PollOpt, Ready, Token};
 use std::io::Read;
 
-use crate::skk::test_unix::*;
-use crate::skk::*;
+use crate::skk::test_unix::{
+    get_take_count, setup, wait_server, BufReader, ConnectSendCompare,
+    ConnectSendCompareRunParameter, Path, Protocol, TcpStreamSkk, Write, MANY_THREADS,
+};
+use crate::skk::Encoding;
 
 /// src/skk/yaskkserv2/mod.rs に同じ struct があることに注意。
 struct MioSocket {
@@ -16,8 +19,8 @@ struct MioSocket {
 }
 
 impl MioSocket {
-    fn new(stream: TcpStream) -> MioSocket {
-        MioSocket {
+    fn new(stream: TcpStream) -> Self {
+        Self {
             buffer_stream: BufReader::new(stream),
         }
     }
@@ -167,7 +170,7 @@ fn echo_server_mio_raw_server(
                             }
                         },
                         token => {
-                            let socket = match sockets.get_mut(usize::from(token)).unwrap() {
+                            let socket = match &mut sockets[usize::from(token)] {
                                 Some(socket) => socket,
                                 None => panic!("sockets get failed"),
                             };
@@ -208,7 +211,6 @@ fn echo_server_mio_raw_server(
                     }
                 }
             }
-            ()
         })
         .unwrap()
 }
@@ -220,7 +222,7 @@ fn echo_server_c_server(
     threads: usize,
 ) {
     let child = match std::process::Command::new(Path::get_full_path_echo_server())
-        .arg(format!("{}", port))
+        .arg(port.to_string())
         .arg(format!("{}", get_take_count(threads)))
         .spawn()
     {

@@ -11,8 +11,8 @@
 //! - network を介さないので特性を見たり性能の評価に向く
 //! - 特徴が出やすい位置にある midashi だけを検索
 //!
-//! 各 test の len() next() last() は下記のように --features="print_debug_for_benchmark" を
-//! 追加して yaskkserv2_make_dictionary を実行すると表示されるので、意味のありそうな単語を
+//! 各 test の len() next() last() は下記のように `--features="print_debug_for_benchmark"` を
+//! 追加して `yaskkserv2_make_dictionary` を実行すると表示されるので、意味のありそうな単語を
 //! そこから選択する。
 //!
 //! ```sh
@@ -20,8 +20,8 @@
 //! ```
 //!
 //! その他、上では表示されないが経験的に candidates が多いことが知られているものなど、特徴的な
-//! test 候補もいくつか存在することに注意。(systemadministrator, utf8_kou,
-//! utf8_nishirozannjityou, utf8_nishi や utf8_nishirozannjityou など)
+//! test 候補もいくつか存在することに注意。(`systemadministrator`, `utf8_kou`,
+//! `utf8_nishirozannjityou`, `utf8_nishi` や `utf8_nishirozannjityou` など)
 
 #[cfg(all(feature = "benchmark", test))]
 mod benchmark {

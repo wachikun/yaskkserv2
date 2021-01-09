@@ -123,9 +123,9 @@ impl GoogleCache {
 
 #[cfg(test)]
 mod test_unix {
-    use crate::skk::test_unix::*;
-    use crate::skk::yaskkserv2::*;
-    use crate::skk::*;
+    use crate::skk::test_unix::{read_jisyo_entries_no_encoding_conversion, setup, Path};
+    use crate::skk::yaskkserv2::{GoogleCache, GoogleCacheBTreeMap};
+    use crate::skk::Encoding;
 
     const LOOP: usize = 50;
 

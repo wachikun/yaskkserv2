@@ -45,9 +45,9 @@ impl Server {
         HandleClientResult::Continue
     }
 
-    const fn validate_buffer_for_protocol_1_and_4(buffer: &[u8]) -> bool {
+    fn validate_buffer_for_protocol_1_and_4(buffer: &[u8]) -> bool {
         let buffer_len = buffer.len();
-        if buffer_len < PROTOCOL_MINIMUM_LENGTH || buffer_len > PROTOCOL_MAXIMUM_LENGTH {
+        if !(PROTOCOL_MINIMUM_LENGTH..=PROTOCOL_MAXIMUM_LENGTH).contains(&buffer_len) {
             return false;
         }
         #[cfg(feature = "assert_paranoia")]
@@ -143,7 +143,9 @@ impl Server {
 pub(in crate::skk) mod test_unix {
     use rand::Rng;
 
-    use crate::skk::yaskkserv2::*;
+    use crate::skk::yaskkserv2::{
+        DictionaryFile, Server, TcpStream, TcpStreamSkk, Write, Yaskkserv2,
+    };
 
     struct ServerDebugImpl {}
 
@@ -158,7 +160,7 @@ pub(in crate::skk) mod test_unix {
                 }
             } else {
                 if let Err(e) =
-                    stream.write_all(&buffer.into_iter().take(split).copied().collect::<Vec<u8>>())
+                    stream.write_all(&buffer.iter().take(split).copied().collect::<Vec<u8>>())
                 {
                     Yaskkserv2::log_error(&format!("{}", e));
                 }
@@ -244,17 +246,17 @@ pub(in crate::skk) mod test_unix {
             dictionary_file: &mut DictionaryFile,
             buffer: &mut [u8],
         ) {
-            if !Server::validate_buffer_for_protocol_1_and_4(&buffer) {
+            if !Self::validate_buffer_for_protocol_1_and_4(buffer) {
                 panic!("error");
             }
             match self.dictionary.read_candidates(dictionary_file, buffer) {
                 Ok(mut candidates) => {
                     if Yaskkserv2::is_empty_candidates(&candidates) {
                         buffer[0] = b'4';
-                        Server::send_bytes_std_net_tcp(stream, &buffer);
+                        Self::send_bytes_std_net_tcp(stream, buffer);
                     } else {
                         candidates.push(b'\n');
-                        Server::send_bytes_std_net_tcp(stream, &candidates);
+                        Self::send_bytes_std_net_tcp(stream, &candidates);
                     }
                 }
                 Err(e) => panic!("error={:?}", e),

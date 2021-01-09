@@ -18,7 +18,10 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use crate::skk::yaskkserv2::TcpStreamSkk;
 use crate::skk::yaskkserv2_make_dictionary::JisyoReader;
-use crate::skk::*;
+use crate::skk::{
+    encoding_simple, Candidates, Dictionary, DictionaryMidashiKey, Encoding, GoogleTiming,
+    Yaskkserv2MakeDictionary, DEFAULT_MAX_SERVER_COMPLETIONS,
+};
 
 pub(in crate::skk) static INIT_MUTEX_LOCK: once_cell::sync::Lazy<Mutex<()>> =
     once_cell::sync::Lazy::new(|| Mutex::new(()));
@@ -30,7 +33,7 @@ pub(in crate::skk) static MANY_THREAD_MUTEX_LOCK: once_cell::sync::Lazy<Mutex<()
 pub(in crate::skk) const DEBUG_FORCE_EXIT_DIRECTORY: &str = "DEBUG_FORCE_EXIT";
 const MANY_THREADS: usize = 8;
 
-fn get_take_count(threads: usize) -> usize {
+const fn get_take_count(threads: usize) -> usize {
     const WAIT_SERVER: usize = 1;
     WAIT_SERVER + threads
 }
@@ -54,16 +57,13 @@ pub(in crate::skk) fn read_jisyo_entries_no_encoding_conversion(
 }
 
 fn wait_server(port: &str) {
-    while match TcpStream::connect(format!("localhost:{}", port)) {
-        Ok(_) => {
-            println!("wait_server connect port={}", port);
-            false
-        }
-        Err(_) => {
-            println!("wait_server wait port={}", port);
-            std::thread::sleep(std::time::Duration::from_millis(500));
-            true
-        }
+    while if TcpStream::connect(format!("localhost:{}", port)).is_ok() {
+        println!("wait_server connect port={}", port);
+        false
+    } else {
+        println!("wait_server wait port={}", port);
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        true
     } {}
     // std::thread::sleep(std::time::Duration::from_millis(1000));
 }
@@ -130,10 +130,11 @@ enum Protocol {
 
 impl Default for Protocol {
     fn default() -> Self {
-        Protocol::Protocol1
+        Self::Protocol1
     }
 }
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Default)]
 struct ConnectSendCompareRunParameter {
     jisyo_full_path: String,
@@ -152,13 +153,8 @@ struct ConnectSendCompareRunParameter {
 }
 
 impl ConnectSendCompareRunParameter {
-    fn new(
-        jisyo_full_path: &str,
-        name: &str,
-        port: &str,
-        protocol: Protocol,
-    ) -> ConnectSendCompareRunParameter {
-        ConnectSendCompareRunParameter {
+    fn new(jisyo_full_path: &str, name: &str, port: &str, protocol: Protocol) -> Self {
+        Self {
             jisyo_full_path: String::from(jisyo_full_path),
             name: String::from(name),
             port: String::from(port),
@@ -167,7 +163,7 @@ impl ConnectSendCompareRunParameter {
             threads: 1,
             max_server_completions: DEFAULT_MAX_SERVER_COMPLETIONS as usize,
             is_compare: true,
-            ..Default::default()
+            ..Self::default()
         }
     }
 
@@ -182,6 +178,7 @@ impl ConnectSendCompareRunParameter {
     crate::define_builder!(max_server_completions, usize);
 }
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Default)]
 struct ConnectSendCompare {
     name: String,
@@ -202,9 +199,14 @@ struct ConnectSendCompare {
     is_send_broken_binary: bool,
 }
 
+struct GetMidashiSendCandidatesResult {
+    cannot_euc_conversion_skip_count: usize,
+    midashi_send_candidates: Vec<(Vec<u8>, Vec<u8>, Vec<u8>)>,
+}
+
 impl ConnectSendCompare {
-    fn new(name: &str, port: &str, protocol: Protocol) -> ConnectSendCompare {
-        ConnectSendCompare {
+    fn new(name: &str, port: &str, protocol: Protocol) -> Self {
+        Self {
             name: String::from(name),
             port: String::from(port),
             protocol,
@@ -213,7 +215,7 @@ impl ConnectSendCompare {
             rng: rand::thread_rng(),
             is_report_rps: true,
             is_compare: true,
-            ..Default::default()
+            ..Self::default()
         }
     }
 
@@ -223,6 +225,7 @@ impl ConnectSendCompare {
         let bench_millis = self.bench.unwrap().elapsed().as_millis();
         let limit_millis = 2000;
         if bench_millis >= limit_millis {
+            #[allow(clippy::cast_possible_truncation)]
             if self.is_report_rps {
                 println!(
                     "{} : port={}  rps.={}",
@@ -263,7 +266,7 @@ impl ConnectSendCompare {
             } else {
                 println!(
                     r#"utf8 candidates compare error  midashi="{:?}"(0x{:x?})  jisyo="{:x?}"  result="{:x?}""#,
-                    String::from_utf8(decoded_midashi.clone()),
+                    String::from_utf8(decoded_midashi),
                     midashi,
                     candidates_compare,
                     result
@@ -295,7 +298,7 @@ impl ConnectSendCompare {
             .split(|v| *v == b'/')
             .skip(SKIP_HEAD_1)
             .collect::<Vec<&[u8]>>();
-        assert!(candidates.len() >= 1);
+        assert!(!candidates.is_empty());
         assert!(self.is_yaskkserv || (candidates.len() <= self.max_server_completions));
         // abbrev は quote がかかるので、quote されてなさそうなもののみ
         // 比較することに注意。また、 server によっては / を含むものを
@@ -327,6 +330,7 @@ impl ConnectSendCompare {
 
     fn report_total(&self) {
         let bench_total_millis = self.bench_total.unwrap().elapsed().as_millis();
+        #[allow(clippy::cast_possible_truncation)]
         if bench_total_millis == 0 {
             println!("bench error");
         } else if self.is_report_rps {
@@ -345,14 +349,14 @@ impl ConnectSendCompare {
         &mut self,
         jisyo_full_path: &str,
         is_sequential: bool,
-    ) -> (usize, Vec<(Vec<u8>, Vec<u8>, Vec<u8>)>) {
+    ) -> GetMidashiSendCandidatesResult {
         let mut cannot_euc_conversion_skip_count = 0;
         let mut midashi_send_candidates = Vec::new();
         let mut jisyo_entries = if self.encoding == Encoding::Euc {
             read_jisyo_entries_no_encoding_conversion(jisyo_full_path)
                 .iter()
                 .filter(|v| {
-                    let r = Self::cannot_euc_conversion(&v);
+                    let r = Self::cannot_euc_conversion(v);
                     if r {
                         cannot_euc_conversion_skip_count += 1;
                     }
@@ -361,14 +365,14 @@ impl ConnectSendCompare {
                 .cloned()
                 .collect::<Vec<Vec<u8>>>()
         } else {
-            read_jisyo_entries_no_encoding_conversion(&jisyo_full_path)
+            read_jisyo_entries_no_encoding_conversion(jisyo_full_path)
         };
         if !is_sequential {
             jisyo_entries.shuffle(&mut rand::thread_rng());
         }
         let jisyo_entries = jisyo_entries;
         for entry in &jisyo_entries {
-            if let Some(midashi_space_find) = twoway::find_bytes(&entry, b" ") {
+            if let Some(midashi_space_find) = twoway::find_bytes(entry, b" ") {
                 let mut send: Vec<u8> = Vec::new();
                 match self.protocol {
                     Protocol::Protocol1 => send.push(b'1'),
@@ -396,12 +400,15 @@ impl ConnectSendCompare {
                 midashi_send_candidates.push((midashi, send, candidates));
             }
         }
-        (cannot_euc_conversion_skip_count, midashi_send_candidates)
+        GetMidashiSendCandidatesResult {
+            cannot_euc_conversion_skip_count,
+            midashi_send_candidates,
+        }
     }
 
     /// server を強制終了してその終了を待つ
     ///
-    /// Yaskkserv2 の is_debug_force_exit_mode で directory を強制終了 flag として使っている
+    /// Yaskkserv2 の `is_debug_force_exit_mode` で directory を強制終了 flag として使っている
     /// ことに注意。
     fn force_exit_server_and_wait_exit_server_for_connect_send_broken_binary(
         buffer_stream: &mut BufReader<&TcpStream>,
@@ -447,11 +454,13 @@ impl ConnectSendCompare {
                     .set_read_timeout(Some(std::time::Duration::from_secs(READ_TIMEOUT_SECS)))
                     .unwrap();
                 let mut buffer_stream = BufReader::new(&stream);
+                #[allow(clippy::same_item_push)]
                 for _ in 0..TEST_LOOP {
                     const RANDOM_LENGTH_MAX: usize = 1000;
                     let random_length = rand::thread_rng().gen_range(1, RANDOM_LENGTH_MAX + 1);
                     let mut random_binary_data = Vec::new();
                     for _ in 0..random_length {
+                        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                         random_binary_data.push(rand::thread_rng().gen_range(0x00, 0xff + 1) as u8);
                     }
                     random_binary_data = random_binary_data
@@ -491,7 +500,7 @@ impl ConnectSendCompare {
             self.connect_send_broken_binary();
             return;
         }
-        let (cannot_euc_conversion_skip_count, midashi_send_candidates) =
+        let get_midashi_send_candidates_result =
             self.get_midashi_send_candidates(jisyo_full_path, is_sequential);
         match TcpStream::connect(format!("localhost:{}", self.port)) {
             Ok(stream) => {
@@ -499,7 +508,9 @@ impl ConnectSendCompare {
                 let mut buffer_stream = BufReader::new(&stream);
                 self.bench = Some(std::time::Instant::now());
                 self.bench_total = Some(std::time::Instant::now());
-                for (midashi, send, candidates) in midashi_send_candidates {
+                for (midashi, send, candidates) in
+                    get_midashi_send_candidates_result.midashi_send_candidates
+                {
                     buffer_stream.get_mut().write_all_flush(&send).unwrap();
                     let mut buffer = Vec::new();
                     match buffer_stream.read_until(b'\n', &mut buffer) {
@@ -516,10 +527,10 @@ impl ConnectSendCompare {
                         Err(e) => panic!("{:#?}", e),
                     }
                 }
-                if cannot_euc_conversion_skip_count > 0 {
+                if get_midashi_send_candidates_result.cannot_euc_conversion_skip_count > 0 {
                     println!(
                         r#"cannot_euc_conversion: {} lines SKIPPED"#,
-                        cannot_euc_conversion_skip_count
+                        get_midashi_send_candidates_result.cannot_euc_conversion_skip_count
                     );
                 }
                 self.report_total();
@@ -535,10 +546,7 @@ impl ConnectSendCompare {
         }
     }
 
-    fn copy_parameter(
-        parameter: &ConnectSendCompareRunParameter,
-        connect_send_compare: &mut ConnectSendCompare,
-    ) {
+    fn copy_parameter(parameter: &ConnectSendCompareRunParameter, connect_send_compare: &mut Self) {
         connect_send_compare.encoding = parameter.encoding;
         connect_send_compare.is_yaskkserv = parameter.is_yaskkserv;
         connect_send_compare.is_compare = parameter.is_compare;
@@ -578,7 +586,7 @@ impl ConnectSendCompare {
                                     thread_index
                                 ),
                                 &thread_parameter.read().unwrap().port,
-                                thread_parameter.read().unwrap().protocol.clone(),
+                                thread_parameter.read().unwrap().protocol,
                             );
                             Self::copy_parameter(
                                 &thread_parameter.read().unwrap(),
@@ -600,7 +608,7 @@ impl ConnectSendCompare {
         }
     }
 
-    fn cannot_euc_conversion(line: &[u8]) -> bool {
+    const fn cannot_euc_conversion(line: &[u8]) -> bool {
         line.len() > 4
             && line[0] == b'&'
             && line[1] == b'#'

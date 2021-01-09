@@ -1,10 +1,15 @@
-use crate::skk::test_unix::*;
+use crate::skk::test_unix::{
+    encoding_simple, get_take_count, setup, wait_server, ConnectSendCompare,
+    ConnectSendCompareRunParameter, Encoding, GoogleTiming, Path, Protocol,
+    Yaskkserv2MakeDictionary, MANY_THREADS,
+};
 use crate::skk::yaskkserv2::Yaskkserv2;
 use crate::skk::Config;
 
 #[cfg(test)]
 use crate::skk::yaskkserv2::test_unix::Yaskkserv2Debug;
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Default)]
 struct Yaskkserv2Test {
     name: String,
@@ -17,12 +22,12 @@ struct Yaskkserv2Test {
 }
 
 impl Yaskkserv2Test {
-    fn new(name: &str, config: &Config) -> Yaskkserv2Test {
-        Yaskkserv2Test {
+    fn new(name: &str, config: &Config) -> Self {
+        Self {
             name: String::from(name),
             config: config.clone(),
             threads: 1,
-            ..Default::default()
+            ..Self::default()
         }
     }
 
@@ -88,7 +93,7 @@ impl Yaskkserv2MakeDictionaryTest {
         for _ in 0..Self::LOOP {
             Yaskkserv2MakeDictionary::run_create_dictionary(
                 &config.clone(),
-                &encoding_table,
+                encoding_table,
                 &[jisyo_full_path.clone()],
             )
             .unwrap();
@@ -102,7 +107,7 @@ impl Yaskkserv2MakeDictionaryTest {
         let jisyo_full_path =
             &Path::get_full_path(&format!("{}.{}.jisyo", &dictionary_full_path, name));
         let config = Config::new()
-            .dictionary_full_path(String::from(dictionary_full_path))
+            .dictionary_full_path(dictionary_full_path)
             .encoding(output_encoding);
         let bench = std::time::Instant::now();
         for _ in 0..Self::LOOP {
@@ -337,6 +342,9 @@ fn yaskkserv2_benchmark_normal_send_broken_binary_test() {
     setup::exit();
 }
 
+//
+// FIXME! 部の kill だけでは処理できないケースが多々あることに注意。
+//
 #[test]
 fn yaskkserv2_benchmark_binary_normal_send_sequential_test() {
     let name = "yaskkserv2_benchmark_binary_normal_send_sequential";
@@ -365,7 +373,7 @@ fn yaskkserv2_benchmark_binary_normal_send_sequential_test() {
     .encoding(Encoding::Utf8)
     .is_sequential(true);
     ConnectSendCompare::run(parameter);
-    // FIXME! この kill だけでは処理できないケースが多々ある
+    // FIXME!
     let _ = std::process::Command::new("kill")
         .arg("-TERM")
         .arg(format!("{}", child.id()))

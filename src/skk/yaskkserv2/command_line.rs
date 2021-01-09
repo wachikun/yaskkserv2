@@ -185,7 +185,7 @@ impl Yaskkserv2CommandLine {
     ) -> Result<(), String> {
         value
             .parse::<T>()
-            .map_err(|_| String::from(message))
+            .map_err(|_e| String::from(message))
             .and_then(|ok| {
                 if ok < min || ok > max {
                     Err(String::from(message))

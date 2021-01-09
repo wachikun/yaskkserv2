@@ -162,7 +162,7 @@ impl Candidates {
         // remove_duplicates_bytes() と同様 tricky な動作をするので注意
         let splited_candidates = candidates_str.split('/').collect::<Vec<&str>>();
         let mut result = Self::remove_duplicates(&splited_candidates).join("/");
-        result.push_str("/");
+        result.push('/');
         result
     }
 

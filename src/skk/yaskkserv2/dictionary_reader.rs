@@ -498,7 +498,9 @@ impl DictionaryReader {
 pub(in crate::skk) mod test_unix {
     use rand::Rng;
 
-    use crate::skk::yaskkserv2::dictionary_reader::*;
+    use crate::skk::yaskkserv2::dictionary_reader::{
+        DictionaryBlockInformation, DictionaryReader, BINARY_SEARCH_THRESHOLD,
+    };
 
     fn get_random_ascii_vec(length: usize) -> Vec<u8> {
         let mut ascii_vec = Vec::new();
@@ -509,9 +511,9 @@ pub(in crate::skk) mod test_unix {
         ascii_vec
     }
 
-    /// get_block_informations_loop_start_index() の test
+    /// `Self::get_block_informations_loop_start_hint_index()` の test
     ///
-    /// get_block_informations_loop_start_index() は少し複雑なので、乱数とループ数であらゆる
+    /// `Self::get_block_informations_loop_start_hint_index()` は少し複雑なので、乱数とループ数であらゆる
     /// ケースの test をしている。
     #[test]
     fn yaskkserv2_dictionary_reader_get_block_informations_loop_start_index_test() {
@@ -554,14 +556,14 @@ pub(in crate::skk) mod test_unix {
             for midashi in &search_midashis {
                 let loop_start_hint_index =
                     DictionaryReader::get_block_informations_loop_start_hint_index(
-                        &midashi[..],
+                        midashi,
                         &dictionary_block_informations,
                     );
                 let mut debug_counter = 0;
                 for dictionary_block_information in
                     &dictionary_block_informations[loop_start_hint_index..]
                 {
-                    if dictionary_block_information.midashi[..] <= midashi[..] {
+                    if dictionary_block_information.midashi <= *midashi {
                         break;
                     }
                     debug_counter += 1;

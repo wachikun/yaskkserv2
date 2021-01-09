@@ -440,6 +440,7 @@ impl Yaskkserv2 {
                 Self::print_warning(message);
             }
             for event in &events {
+                #[allow(clippy::used_underscore_binding)]
                 match event.token() {
                     LISTENER => loop {
                         run_loop_listener!(

@@ -3,7 +3,11 @@ use std::collections::BTreeMap;
 use std::io::Read;
 use std::sync::mpsc;
 
-use crate::skk::test_unix::*;
+use crate::skk::test_unix::{
+    encoding_simple, get_take_count, read_jisyo_entries_no_encoding_conversion, setup, wait_server,
+    BufRead, BufReader, Candidates, Dictionary, DictionaryMidashiKey, Encoding, Path, Rng,
+    TcpStream, TcpStreamSkk, Write, MANY_THREAD_MUTEX_LOCK,
+};
 use crate::skk::yaskkserv2::DictionaryReader;
 use crate::skk::yaskkserv2::Yaskkserv2;
 use crate::skk::Config;
@@ -29,7 +33,7 @@ fn run_and_wait_simple_server(config: &Config, take_count: usize) -> std::thread
 
 fn get_top_character_map(encoding: Encoding) -> BTreeMap<DictionaryMidashiKey, Vec<u8>> {
     let mut top_character_map = BTreeMap::new();
-    let mut tmp_character_map = FxHashMap::default();
+    let mut temporary_character_map = FxHashMap::default();
     {
         // 見出しを取得する辞書は EUC であることに注意
         let jisyo_entries = read_jisyo_entries_no_encoding_conversion(
@@ -41,9 +45,9 @@ fn get_top_character_map(encoding: Encoding) -> BTreeMap<DictionaryMidashiKey, V
                 if !DictionaryReader::is_okuri_ari(midashi) {
                     let dictionary_midashi_key =
                         Dictionary::get_dictionary_midashi_key(entry).unwrap();
-                    tmp_character_map
+                    temporary_character_map
                         .entry(dictionary_midashi_key)
-                        .or_insert_with(|| Vec::new())
+                        .or_insert_with(Vec::new)
                         .push(midashi.to_vec());
                 }
             } else {
@@ -51,7 +55,7 @@ fn get_top_character_map(encoding: Encoding) -> BTreeMap<DictionaryMidashiKey, V
             }
         }
     }
-    for (key, value) in tmp_character_map.iter_mut() {
+    for (key, value) in &mut temporary_character_map {
         value.sort();
         let quoted = value
             .iter()
@@ -79,7 +83,7 @@ fn test_abbrev(port: &str, encoding: Encoding) {
     match TcpStream::connect(format!("localhost:{}", config.port)) {
         Ok(stream) => {
             let mut buffer_stream = BufReader::new(&stream);
-            for (dictionary_midashi_key, concat) in top_character_map.iter() {
+            for (dictionary_midashi_key, concat) in &top_character_map {
                 let mut send_data = vec![b'4'];
                 match dictionary_midashi_key[0] {
                     0xa1..=0xfe | 0x8e => send_data.extend_from_slice(&dictionary_midashi_key[..2]),
@@ -94,7 +98,7 @@ fn test_abbrev(port: &str, encoding: Encoding) {
                     Ok(size) => {
                         let trimmed = Candidates::trim_one_slash(&buffer[1..size - 1]);
                         // assert_eq!() だと対象が大き過ぎて log が酷いことになるので自前で比較表示
-                        if &concat[..] != trimmed {
+                        if concat != trimmed {
                             const PRINT_LENGTH: usize = 10;
                             panic!(
                                 "compare error left head={:x?} right head={:x?}",
@@ -224,23 +228,19 @@ impl MaxConnections {
             .name(String::from(std::thread::current().name().unwrap()))
             .spawn(move || {
                 // max_connections を越えて send するので error を握り潰す必要があることに注意
-                match TcpStream::connect(format!("localhost:{}", thread_config.port)) {
-                    Ok(mut stream) => {
-                        stream.write_all_flush_ignore_error(send_data);
-                        let mut buffer = vec![0; 8 * 1024];
-                        match stream.read(&mut buffer) {
-                            Ok(size) => {
-                                if size != 0 {
-                                    tx.send("send").unwrap();
-                                }
-                            }
-                            Err(_) => {}
+                if let Ok(mut stream) =
+                    TcpStream::connect(format!("localhost:{}", thread_config.port))
+                {
+                    stream.write_all_flush_ignore_error(send_data);
+                    let mut buffer = vec![0; 8 * 1024];
+                    if let Ok(size) = stream.read(&mut buffer) {
+                        if size != 0 {
+                            tx.send("send").unwrap();
                         }
-                        std::thread::sleep(std::time::Duration::from_millis(sleep_millis));
-                        let _ignore_error = stream.write_all(b"0");
-                        let _ignore_error = stream.flush();
                     }
-                    Err(_) => {}
+                    std::thread::sleep(std::time::Duration::from_millis(sleep_millis));
+                    let _ignore_error = stream.write_all(b"0");
+                    let _ignore_error = stream.flush();
                 }
             })
             .unwrap()
@@ -263,6 +263,7 @@ impl MaxConnections {
             b"1V ", b"1W ", b"1X ", b"1Y ", b"1Z ", b"1! ", b"1@ ",
         ];
         assert!(max_connections <= lifetime_static_table.len());
+        #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
         let config = Config::new()
             .port(String::from(port))
             .dictionary_full_path(Path::get_full_path_yaskkserv2_dictionary(Encoding::Utf8))
@@ -423,26 +424,22 @@ impl TestConnections {
         let thread_config = config.clone();
         std::thread::Builder::new()
             .name(String::from(std::thread::current().name().unwrap()))
-            .spawn(
-                move || match TcpStream::connect(format!("localhost:{}", thread_config.port)) {
-                    Ok(mut stream) => {
-                        let mut buffer = vec![0; 8 * 1024];
-                        let loop_times = rand::thread_rng().gen_range(1000, 5000);
-                        for _ in 0..loop_times {
-                            stream.write_all_flush(b"1a ").unwrap();
-                            std::thread::sleep(std::time::Duration::from_millis(
-                                rand::thread_rng().gen_range(1, 10),
-                            ));
-                            match stream.read(&mut buffer) {
-                                Ok(_) => {}
-                                Err(_) => {}
-                            }
-                        }
-                        stream.write_disconnect_flush().unwrap();
+            .spawn(move || {
+                if let Ok(mut stream) =
+                    TcpStream::connect(format!("localhost:{}", thread_config.port))
+                {
+                    let mut buffer = vec![0; 8 * 1024];
+                    let loop_times = rand::thread_rng().gen_range(1000, 5000);
+                    for _ in 0..loop_times {
+                        stream.write_all_flush(b"1a ").unwrap();
+                        std::thread::sleep(std::time::Duration::from_millis(
+                            rand::thread_rng().gen_range(1, 10),
+                        ));
+                        if stream.read(&mut buffer).is_ok() {}
                     }
-                    Err(_) => {}
-                },
-            )
+                    stream.write_disconnect_flush().unwrap();
+                }
+            })
             .unwrap()
     }
 
@@ -457,6 +454,7 @@ impl TestConnections {
             }
             std::thread::sleep(std::time::Duration::from_millis(1000));
         }
+        #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
         let config = Config::new()
             .port(String::from(port))
             .dictionary_full_path(Path::get_full_path_yaskkserv2_dictionary(Encoding::Utf8))

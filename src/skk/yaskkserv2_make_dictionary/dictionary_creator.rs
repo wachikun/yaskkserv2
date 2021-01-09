@@ -442,7 +442,9 @@ impl DictionaryCreator {
 pub(in crate::skk) mod test_unix {
     use rand::Rng;
 
-    use crate::skk::yaskkserv2_make_dictionary::dictionary_creator::*;
+    use crate::skk::yaskkserv2_make_dictionary::dictionary_creator::{
+        DictionaryCreator, TemporaryBlockMap,
+    };
 
     fn get_random_ascii_vec(length: usize) -> Vec<u8> {
         let mut ascii_vec = Vec::new();
@@ -463,8 +465,7 @@ pub(in crate::skk) mod test_unix {
             {
                 const MIDASHI_LENGTH: usize = 32;
                 const CANDIDATES_LENGTH: usize = 1024;
-                let mut line = Vec::new();
-                line.push(b'\n');
+                let mut line = vec![b'\n'];
                 for _ in 0..ENTRIES {
                     line.extend_from_slice(&get_random_ascii_vec(MIDASHI_LENGTH));
                     line.push(b' ');
