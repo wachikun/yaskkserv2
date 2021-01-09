@@ -1,11 +1,10 @@
 use rand::Rng;
 use rustc_hash::FxHashSet;
 use std::fs::File;
-use std::iter::FromIterator;
 
-use crate::skk::test_unix::*;
+use crate::skk::test_unix::setup;
 use crate::skk::yaskkserv2_make_dictionary::JisyoReader;
-use crate::skk::*;
+use crate::skk::{Candidates, Encoding};
 
 #[test]
 fn quote_skk_jisyo_static_test() {
@@ -36,7 +35,7 @@ fn quote_skk_jisyo_static_test() {
 #[test]
 fn quote_skk_jisyo_random_test() {
     let quote_chars = b"\r\n\\\";/";
-    let quote_set = FxHashSet::<u8>::from_iter(quote_chars.iter().copied());
+    let quote_set: FxHashSet<u8> = quote_chars.iter().copied().collect();
     let mut rng = rand::thread_rng();
     let loop_limit = 10000;
     let buffer_length = 10000;
@@ -44,6 +43,7 @@ fn quote_skk_jisyo_random_test() {
         let mut buffer = Vec::new();
         let mut add_count = 0;
         loop {
+            #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
             let rand_u8 = rng.gen_range(1, 256) as u8;
             if !quote_set.contains(&rand_u8) {
                 buffer.push(rand_u8);
@@ -97,14 +97,14 @@ fn detect_encoding_test() {
     setup::exit();
 }
 
+// compare_vec_* は remove_duplicates() とは異なるロジックで remove_duplicates() 相当の
+// 処理をするために使用する。
 #[test]
 fn remove_duplicates_test() {
     const OUTER_LOOP_COUNT: usize = 50000;
     const BUFFER_LOOP: usize = 1000;
     let mut rng = rand::thread_rng();
     for _ in 0..OUTER_LOOP_COUNT {
-        // compare_vec_* は remove_duplicates() とは異なるロジックで remove_duplicates() 相当の
-        // 処理をするために使用する。
         let mut compare_vec_buffer = Vec::new();
         let mut compare_vec_tmp = Vec::new();
         let mut buffer = Vec::new();

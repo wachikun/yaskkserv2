@@ -1,8 +1,11 @@
 use rand::Rng;
 use std::sync::{Arc, Mutex, RwLock};
 
-use crate::skk::test_unix::*;
-use crate::skk::yaskkserv2::*;
+use crate::skk::test_unix::{Path, MANY_THREAD_MUTEX_LOCK};
+use crate::skk::yaskkserv2::{
+    BufRead, DictionaryFile, File, GoogleCache, Server, ServerDebug, Shutdown, Yaskkserv2,
+    INITIAL_DICTIONARY_FILE_READ_BUFFER_LENGTH,
+};
 
 pub(in crate::skk) trait Yaskkserv2Debug {
     fn run_test(&mut self, take_count_for_test: usize);
@@ -22,8 +25,8 @@ impl Yaskkserv2Debug for Yaskkserv2 {
             Ok(ok) => ok,
             Err(e) => {
                 let message = format!("bind failed {}", e);
-                Yaskkserv2::log_error(&message);
-                Yaskkserv2::print_warning(&message);
+                Self::log_error(&message);
+                Self::print_warning(&message);
                 return;
             }
         };
@@ -36,53 +39,48 @@ impl Yaskkserv2Debug for Yaskkserv2 {
                         INITIAL_DICTIONARY_FILE_READ_BUFFER_LENGTH,
                     );
                     let mut buffer = Vec::new();
-                    while match buffer_stream.read_until(b' ', &mut buffer) {
-                        Ok(size) => {
-                            if size == 0 {
-                                false
-                            } else {
-                                let mut loop_result = true;
-                                let skip = Self::get_buffer_skip_count(&buffer, size);
-                                if size - skip > 0 {
-                                    match buffer[skip] {
-                                        b'0' => loop_result = false,
-                                        b'1' => {
-                                            self.server
-                                                .handle_client_protocol_1_simple_std_net_tcp(
-                                                    buffer_stream.get_mut(),
-                                                    &mut dictionary_file,
-                                                    &mut buffer[skip..],
-                                                );
-                                        }
-                                        _ => panic!("error"),
-                                    };
-                                } else {
-                                    loop_result = false;
-                                }
-                                buffer.clear();
-                                loop_result
-                            }
-                        }
-                        Err(_) => {
-                            match buffer_stream.get_ref().peer_addr() {
-                                Ok(peer_addr) => Yaskkserv2::log_error(&format!(
-                                    "read_line() error={}",
-                                    peer_addr
-                                )),
-                                Err(e) => Yaskkserv2::log_error(&format!(
-                                    "peer_address() get failed error={}",
-                                    e
-                                )),
-                            };
-                            if let Err(e) = buffer_stream.get_mut().shutdown(Shutdown::Both) {
-                                Yaskkserv2::log_error(&format!("shutdown error={}", e));
-                            }
+                    while if let Ok(size) = buffer_stream.read_until(b' ', &mut buffer) {
+                        if size == 0 {
                             false
+                        } else {
+                            let mut loop_result = true;
+                            let skip = Self::get_buffer_skip_count(&buffer, size);
+                            if size - skip > 0 {
+                                #[allow(clippy::match_on_vec_items)]
+                                match buffer[skip] {
+                                    b'0' => loop_result = false,
+                                    b'1' => {
+                                        self.server.handle_client_protocol_1_simple_std_net_tcp(
+                                            buffer_stream.get_mut(),
+                                            &mut dictionary_file,
+                                            &mut buffer[skip..],
+                                        );
+                                    }
+                                    _ => panic!("error"),
+                                };
+                            } else {
+                                loop_result = false;
+                            }
+                            buffer.clear();
+                            loop_result
                         }
+                    } else {
+                        match buffer_stream.get_ref().peer_addr() {
+                            Ok(peer_addr) => {
+                                Self::log_error(&format!("read_line() error={}", peer_addr))
+                            }
+                            Err(e) => {
+                                Self::log_error(&format!("peer_address() get failed error={}", e))
+                            }
+                        };
+                        if let Err(e) = buffer_stream.get_mut().shutdown(Shutdown::Both) {
+                            Self::log_error(&format!("shutdown error={}", e));
+                        }
+                        false
                     } {}
                 }
                 Err(e) => {
-                    Yaskkserv2::log_error(&format!("{}", e));
+                    Self::log_error(&format!("{}", e));
                 }
             }
         }
@@ -133,7 +131,7 @@ fn yaskkserv2_google_cache_mutex_read_write_compare_test() {
                                 ];
                             let config = &core.read().unwrap().config;
                             GoogleCache::write_candidates(
-                                &format!("{}", midashi).as_bytes(),
+                                format!("{}", midashi).as_bytes(),
                                 &candidates,
                                 &config.google_cache_full_path,
                                 config.google_cache_entries,
@@ -141,7 +139,7 @@ fn yaskkserv2_google_cache_mutex_read_write_compare_test() {
                             )
                             .unwrap();
                             let get_candidates =
-                                GoogleCache::get_candidates(&format!("{}", midashi).as_bytes());
+                                GoogleCache::get_candidates(format!("{}", midashi).as_bytes());
                             assert_eq!(get_candidates, candidates);
                         }
                     })
@@ -182,14 +180,14 @@ fn yaskkserv2_google_cache_multithread_read_write_test() {
                                 ];
                             let config = &core.read().unwrap().config;
                             GoogleCache::write_candidates(
-                                &format!("{}", midashi).as_bytes(),
+                                format!("{}", midashi).as_bytes(),
                                 &candidates,
                                 &config.google_cache_full_path,
                                 config.google_cache_entries,
                                 config.google_cache_expire_seconds,
                             )
                             .unwrap();
-                            GoogleCache::get_candidates(&format!("{}", midashi).as_bytes());
+                            GoogleCache::get_candidates(format!("{}", midashi).as_bytes());
                         }
                     })
                     .unwrap(),

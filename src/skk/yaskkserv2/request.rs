@@ -6,18 +6,18 @@ use crate::skk::yaskkserv2::{
 };
 
 impl Request {
-    const fn is_utf8_hiragana(letter: [u8; 3]) -> bool {
+    fn is_utf8_hiragana(letter: [u8; 3]) -> bool {
         if letter[0] != 0xe3 {
             return false;
         }
         if letter[1] == 0x81 {
-            return letter[2] >= 0x81 && letter[2] <= 0xbf;
+            return (0x81..=0xbf).contains(&letter[2]);
         }
         if letter[1] == 0x82 {
-            if letter[2] >= 0x9b && letter[2] <= 0x9e {
+            if (0x9b..=0x9e).contains(&letter[2]) {
                 return true;
             }
-            if letter[2] < 0x80 || letter[2] > 0x93 {
+            if !(0x80..=0x93).contains(&letter[2]) {
                 return false;
             }
             true
@@ -26,18 +26,18 @@ impl Request {
         }
     }
 
-    const fn is_utf8_katakana(letter: [u8; 3]) -> bool {
+    fn is_utf8_katakana(letter: [u8; 3]) -> bool {
         if letter[0] != 0xe3 {
             return false;
         }
         if letter[1] == 0x82 {
-            return letter[2] >= 0xa1 && letter[2] <= 0xbf;
+            return (0xa1..=0xbf).contains(&letter[2]);
         }
         if letter[1] == 0x83 {
-            if letter[2] >= 0xbb && letter[2] <= 0xbe {
+            if (0xbb..=0xbe).contains(&letter[2]) {
                 return true;
             }
-            if letter[2] < 0x80 || letter[2] > 0xb6 {
+            if !(0x80..=0xb6).contains(&letter[2]) {
                 return false;
             }
             true
@@ -46,15 +46,15 @@ impl Request {
         }
     }
 
-    const fn is_utf8_hankaku_katakana(letter: [u8; 3]) -> bool {
+    fn is_utf8_hankaku_katakana(letter: [u8; 3]) -> bool {
         if letter[0] != 0xef {
             return false;
         }
         if letter[1] == 0xbd {
-            return letter[2] >= 0xa1 && letter[2] <= 0xbf;
+            return (0xa1..=0xbf).contains(&letter[2]);
         }
         if letter[1] == 0xbe {
-            if letter[2] < 0x80 || letter[2] > 0x9f {
+            if !(0x80..=0x9f).contains(&letter[2]) {
                 return false;
             }
             true
@@ -102,13 +102,13 @@ impl Request {
         true
     }
 
-    const fn should_add_tail_candidates(midashi_tail: &[u8]) -> bool {
+    fn should_add_tail_candidates(midashi_tail: &[u8]) -> bool {
         let length = midashi_tail.len();
         if length < 1 {
             return false;
         }
         let tail_ascii = midashi_tail[length - 1];
-        tail_ascii < b'a' || tail_ascii > b'z'
+        !(b'a'..=b'z').contains(&tail_ascii)
     }
 
     fn should_add(
@@ -394,6 +394,7 @@ impl Request {
 
 #[cfg(test)]
 pub(in crate::skk) mod test_unix {
+    #![allow(clippy::non_ascii_literal)]
     use crate::skk::yaskkserv2::Request;
     use std::convert::TryInto;
 
@@ -490,7 +491,7 @@ pub(in crate::skk) mod test_unix {
         assert!(!Request::is_utf8_hiragana_only("あa".as_bytes()));
         assert!(!Request::is_utf8_hiragana_only("ア".as_bytes()));
         assert!(!Request::is_utf8_hiragana_only("ｱ".as_bytes()));
-        assert!(!Request::is_utf8_hiragana_only("a".as_bytes()));
+        assert!(!Request::is_utf8_hiragana_only(b"a"));
     }
 
     #[test]
@@ -502,7 +503,7 @@ pub(in crate::skk) mod test_unix {
         assert!(!Request::is_utf8_katakana_only("あa".as_bytes()));
         assert!(!Request::is_utf8_katakana_only("あ".as_bytes()));
         assert!(!Request::is_utf8_katakana_only("ｱ".as_bytes()));
-        assert!(!Request::is_utf8_katakana_only("a".as_bytes()));
+        assert!(!Request::is_utf8_katakana_only(b"a"));
     }
 
     #[test]
@@ -516,6 +517,6 @@ pub(in crate::skk) mod test_unix {
         assert!(!Request::is_utf8_hankaku_katakana_only("あｱ".as_bytes()));
         assert!(!Request::is_utf8_hankaku_katakana_only("あa".as_bytes()));
         assert!(!Request::is_utf8_hankaku_katakana_only("あ".as_bytes()));
-        assert!(!Request::is_utf8_hankaku_katakana_only("a".as_bytes()));
+        assert!(!Request::is_utf8_hankaku_katakana_only(b"a"));
     }
 }

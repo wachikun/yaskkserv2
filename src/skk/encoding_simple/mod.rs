@@ -112,31 +112,23 @@ impl Utility {
             let buffer_1 = buffer[i + 1];
             let buffer_2 = buffer[i + 2];
             let buffer_3 = buffer[i + 3];
-            if (buffer_0 >= 0xc2) && (buffer_0 <= 0xdf) && (buffer_1 >= 0x80) && (buffer_1 <= 0xbf)
-            {
+            if (0xc2..=0xdf).contains(&buffer_0) && (0x80..=0xbf).contains(&buffer_1) {
                 i += 2;
                 utf8_valid_count += 1;
-            } else if (buffer_0 >= 0xe0)
-                && (buffer_0 <= 0xef)
-                && (buffer_1 >= 0x80)
-                && (buffer_1 <= 0xbf)
-                && (buffer_2 >= 0x80)
-                && (buffer_2 <= 0xbf)
+            } else if (0xe0..=0xef).contains(&buffer_0)
+                && (0x80..=0xbf).contains(&buffer_1)
+                && (0x80..=0xbf).contains(&buffer_2)
             {
                 i += 3;
                 utf8_valid_count += 1;
-            } else if (buffer_0 >= 0xf0)
-                && (buffer_0 <= 0xf7)
-                && (buffer_1 >= 0x80)
-                && (buffer_1 <= 0xbf)
-                && (buffer_2 >= 0x80)
-                && (buffer_2 <= 0xbf)
-                && (buffer_3 >= 0x80)
-                && (buffer_3 <= 0xbf)
+            } else if (0xf0..=0xf7).contains(&buffer_0)
+                && (0x80..=0xbf).contains(&buffer_1)
+                && (0x80..=0xbf).contains(&buffer_2)
+                && (0x80..=0xbf).contains(&buffer_3)
             {
                 i += 4;
                 utf8_valid_count += 1;
-            } else if (buffer_0 >= 0x01) && (buffer_0 <= 0x7f) {
+            } else if (0x01..=0x7f).contains(&buffer_0) {
                 i += 1;
             } else {
                 i += 1;

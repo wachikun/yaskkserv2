@@ -148,7 +148,7 @@ impl JisyoReader {
                 output_encoding,
             )?;
             let removed_duplicates_candidates = Candidates::remove_duplicates_bytes(&candidates);
-            if candidates != &removed_duplicates_candidates[..] {
+            if candidates != removed_duplicates_candidates {
                 Yaskkserv2MakeDictionary::print_warning(&format!(
                     r#"CORRECTED! (DUPLICATE CANDIDATES) {}:{} {:?}    {:?} -> {:?}"#,
                     jisyo_full_path,

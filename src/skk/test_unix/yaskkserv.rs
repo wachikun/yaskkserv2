@@ -2,7 +2,10 @@
 //!
 //! yaskkserv を起動して test する。 yaskkserv が存在しない場合は何もせず成功する。
 
-use crate::skk::test_unix::*;
+use crate::skk::test_unix::{
+    setup, wait_server, ConnectSendCompare, ConnectSendCompareRunParameter, Encoding, Path,
+    Protocol, MANY_THREADS,
+};
 
 fn yaskkserv_core(
     name: &'static str,

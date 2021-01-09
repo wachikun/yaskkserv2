@@ -4,9 +4,9 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, Write};
 use std::sync::RwLock;
 
-use crate::skk::test_unix::*;
+use crate::skk::test_unix::{Path, INIT_MUTEX_LOCK};
 use crate::skk::yaskkserv2_make_dictionary::Yaskkserv2MakeDictionary;
-use crate::skk::*;
+use crate::skk::{encoding_simple, once_init_encoding_table, Config, Encoding};
 
 static ONCE_INIT: std::sync::Once = std::sync::Once::new();
 
@@ -22,9 +22,10 @@ static UTF8_JISYO_FULL_PATHS: once_cell::sync::Lazy<RwLock<Vec<String>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
 static TEST_RUNNING_COUNT: once_cell::sync::Lazy<RwLock<usize>> =
     once_cell::sync::Lazy::new(|| RwLock::new(0));
-static PANIC_DEFAULT_HOOK: once_cell::sync::Lazy<
-    RwLock<Box<dyn Fn(&std::panic::PanicInfo<'_>) + 'static + Sync + Send>>,
-> = once_cell::sync::Lazy::new(|| RwLock::new(std::panic::take_hook()));
+type PanicDefaultHook =
+    once_cell::sync::Lazy<RwLock<Box<dyn Fn(&std::panic::PanicInfo<'_>) + 'static + Sync + Send>>>;
+static PANIC_DEFAULT_HOOK: PanicDefaultHook =
+    once_cell::sync::Lazy::new(|| RwLock::new(std::panic::take_hook()));
 static PANIC_THREAD_NAME_SET: once_cell::sync::Lazy<RwLock<FxHashSet<String>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(FxHashSet::default()));
 
@@ -38,6 +39,7 @@ impl JisyoDownloader {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn download_and_extract() -> Vec<String> {
         let download_urls = [
             (Encoding::Euc, "https://raw.githubusercontent.com/skk-dev/dict/master/SKK-JISYO.hukugougo"),
@@ -147,7 +149,7 @@ impl JisyoDownloader {
         ];
         let mut jisyo_full_paths = Vec::new();
         for info in &download_md5_infos {
-            let full_path = Self::download_md5_and_archive(&info.1, &info.2);
+            let full_path = Self::download_md5_and_archive(info.1, &info.2);
             jisyo_full_paths.extend(full_path.clone());
             match info.0 {
                 Encoding::Euc => EUC_JISYO_FULL_PATHS.write().unwrap().extend(full_path),
@@ -226,20 +228,20 @@ impl JisyoDownloader {
                     .collect::<Vec<String>>(),
             );
         }
-        if Self::is_extracted(&md5_full_path) {
+        if Self::is_extracted(md5_full_path) {
             println!("extracted url={}", download_md5_url);
         } else {
             let download_archive_url = download_md5_url.trim_end_matches(".md5");
             println!("curl download md5 url={}", download_md5_url);
-            Self::download(&download_md5_url, &md5_full_path);
+            Self::download(download_md5_url, md5_full_path);
             println!("curl download archive url={}", download_archive_url);
-            Self::download(&download_archive_url, &archive_full_path);
-            Self::compare_openssl_md5(&md5_full_path);
+            Self::download(download_archive_url, archive_full_path);
+            Self::compare_openssl_md5(md5_full_path);
             Self::extract(archive_full_path);
             for full_path in &jisyo_full_paths {
                 Self::correct(full_path);
             }
-            Self::create_extract_flag_directory(&md5_full_path);
+            Self::create_extract_flag_directory(md5_full_path);
         }
         jisyo_full_paths
     }
@@ -330,17 +332,17 @@ impl JisyoDownloader {
 struct OnceInit {}
 
 impl OnceInit {
-    fn create_dictionary(config: Config, jisyo_full_paths: &[String]) {
+    fn create_dictionary(config: &Config, jisyo_full_paths: &[String]) {
         Yaskkserv2MakeDictionary::run_create_dictionary(
-            &config,
-            &encoding_simple::EncodingTable::get(),
-            &jisyo_full_paths,
+            config,
+            encoding_simple::EncodingTable::get(),
+            jisyo_full_paths,
         )
         .unwrap();
     }
 
-    fn create_jisyo(config: Config, jisyo_full_paths: &str) {
-        Yaskkserv2MakeDictionary::run_create_jisyo(&config, jisyo_full_paths).unwrap();
+    fn create_jisyo(config: &Config, jisyo_full_paths: &str) {
+        Yaskkserv2MakeDictionary::run_create_jisyo(config, jisyo_full_paths).unwrap();
     }
 
     fn convert_dictionary_and_jisyo(config: &Config, jisyo_full_paths: &[String]) {
@@ -350,13 +352,13 @@ impl OnceInit {
                 let mut cloned_config = config.clone();
                 cloned_config.encoding = Encoding::Euc;
                 cloned_config.dictionary_full_path = format!("{}.dictionary", jisyo_full_path);
-                Self::create_dictionary(cloned_config, &[String::from(jisyo_full_path)]);
+                Self::create_dictionary(&cloned_config, &[String::from(jisyo_full_path)]);
             }
             {
                 let mut cloned_config = config.clone();
                 cloned_config.encoding = Encoding::Utf8;
                 cloned_config.dictionary_full_path = format!("{}.dictionary.utf8", jisyo_full_path);
-                Self::create_dictionary(cloned_config, &[String::from(jisyo_full_path)]);
+                Self::create_dictionary(&cloned_config, &[String::from(jisyo_full_path)]);
             }
         }
         {
@@ -364,14 +366,14 @@ impl OnceInit {
             cloned_config.encoding = Encoding::Euc;
             cloned_config.dictionary_full_path =
                 Path::get_full_path_yaskkserv2_dictionary(cloned_config.encoding);
-            Self::create_dictionary(cloned_config, jisyo_full_paths);
+            Self::create_dictionary(&cloned_config, jisyo_full_paths);
         }
         {
             let mut cloned_config = config.clone();
             cloned_config.encoding = Encoding::Utf8;
             cloned_config.dictionary_full_path =
                 Path::get_full_path_yaskkserv2_dictionary(cloned_config.encoding);
-            Self::create_dictionary(cloned_config, jisyo_full_paths);
+            Self::create_dictionary(&cloned_config, jisyo_full_paths);
         }
         {
             let mut cloned_config = config.clone();
@@ -380,7 +382,7 @@ impl OnceInit {
             cloned_config.dictionary_full_path =
                 Path::get_full_path_yaskkserv2_dictionary(cloned_config.encoding);
             Self::create_jisyo(
-                cloned_config,
+                &cloned_config,
                 &Path::get_full_path_yaskkserv2_jisyo(encoding),
             );
         }
@@ -391,7 +393,7 @@ impl OnceInit {
             cloned_config.dictionary_full_path =
                 Path::get_full_path_yaskkserv2_dictionary(cloned_config.encoding);
             Self::create_jisyo(
-                cloned_config,
+                &cloned_config,
                 &Path::get_full_path_yaskkserv2_jisyo(encoding),
             );
         }
@@ -491,7 +493,7 @@ int main(int argc, char *argv[]) {
             .write(true)
             .open(source_full_path)
             .unwrap();
-        writer.write_all(&echo_server_c_source.as_bytes()).unwrap();
+        writer.write_all(echo_server_c_source.as_bytes()).unwrap();
         let echo_server_full_path = &Path::get_full_path_echo_server();
         let mut child = match std::process::Command::new("gcc")
             .arg("-Ofast")
@@ -509,8 +511,8 @@ int main(int argc, char *argv[]) {
         child.wait().unwrap();
     }
 
-    /// std::panic::set_hook() 直前の std::panic::take_hook() は必須であることに注意。
-    /// (lazy_static 定義部の std::panic::take_hook() だけでは std::panic::set_hook() 後に
+    /// `std::panic::set_hook()` 直前の `std::panic::take_hook()` は必須であることに注意。
+    /// (`lazy_static` 定義部の `std::panic::take_hook()` だけでは `std::panic::set_hook()` 後に
     ///  設定されてしまう)
     fn setup_panic_hook() {
         *PANIC_DEFAULT_HOOK.write().unwrap() = std::panic::take_hook();
@@ -529,7 +531,7 @@ int main(int argc, char *argv[]) {
         ONCE_INIT.call_once(|| {
             Self::setup_panic_hook();
             std::fs::create_dir_all(&Path::get_full_path_test_base()).unwrap();
-            once_init_encoding_table(&encoding_simple::EncodingTable::get());
+            once_init_encoding_table(encoding_simple::EncodingTable::get());
             let jisyo_full_paths = JisyoDownloader::download_and_extract();
             let config = Config::new();
             if JisyoDownloader::is_converted() {
