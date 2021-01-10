@@ -85,7 +85,11 @@ impl Yaskkserv2MakeDictionaryCommandLine {
             self.output_jisyo_full_path = String::from(full_path);
         }
         self.config.is_verbose = matches.is_present("verbose");
-        if self.jisyo_full_paths.is_empty() && self.output_jisyo_full_path.is_empty() {
+        if self.jisyo_full_paths.is_empty() {
+            if self.output_jisyo_full_path.is_empty() {
+                result_is_help_exit = true;
+            }
+        } else if self.config.dictionary_full_path.is_empty() {
             result_is_help_exit = true;
         }
         if result_is_help_exit {
