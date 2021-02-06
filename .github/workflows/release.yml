@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+    - id: create-release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - run: |
+        echo '${{ steps.create-release.outputs.upload_url }}' > release_upload_url
+    - uses: actions/upload-artifact@v1
+      with:
+        name: create-release
+        path: release_upload_url
+
+  build-release:
+    needs: ['create-release']
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-pc-windows-gnu
+          - x86_64-apple-darwin
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        target: ${{ matrix.target }}
+    - uses: actions-rs/cargo@v1.0.1
+      with:
+        command: build
+        args: --release --target=${{ matrix.target }}
+        use-cross: true
+    - name: Build archive
+      shell: bash
+      run: |
+        REF=${{ github.ref }}
+        ARCHIVE_BASE_NAME="yaskkserv2-${REF:10}-${{ matrix.target }}"
+        TARGET_DIR_BASE="target/${{ matrix.target }}/release"
+        mkdir "$ARCHIVE_BASE_NAME"
+        cp {README.md,LICENSE-APACHE,LICENSE-MIT} "$ARCHIVE_BASE_NAME/"
+        if [ "${{ matrix.target }}" = "x86_64-pc-windows-gnu" ]; then
+          cp "$TARGET_DIR_BASE/yaskkserv2.exe" "$TARGET_DIR_BASE/yaskkserv2_make_dictionary.exe" "$ARCHIVE_BASE_NAME/"
+          7z a "$ARCHIVE_BASE_NAME.zip" "$ARCHIVE_BASE_NAME"
+          echo "ARCHIVE=$ARCHIVE_BASE_NAME.zip" >> $GITHUB_ENV
+        else
+          cp "$TARGET_DIR_BASE/yaskkserv2" "$TARGET_DIR_BASE/yaskkserv2_make_dictionary" "$ARCHIVE_BASE_NAME/"
+          tar czf "$ARCHIVE_BASE_NAME.tar.gz" "$ARCHIVE_BASE_NAME"
+          echo "ARCHIVE=$ARCHIVE_BASE_NAME.tar.gz" >> $GITHUB_ENV
+        fi
+    - uses: actions/download-artifact@v1
+      with:
+        name: create-release
+    - id: upload-url
+      run: |
+        echo "::set-output name=url::$(cat create-release/release_upload_url)"
+    - name: Upload release archive
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.upload-url.outputs.url }}
+        asset_path: ${{ env.ARCHIVE }}
+        asset_name: ${{ env.ARCHIVE }}
+        asset_content_type: application/octet-stream
