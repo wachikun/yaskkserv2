@@ -240,7 +240,7 @@ trait ToFromNeBytes {
         let mut result = Vec::new();
         unsafe {
             result.extend_from_slice(std::slice::from_raw_parts(
-                (self as *const Self) as *const u8,
+                (self as *const Self).cast::<u8>(),
                 std::mem::size_of::<Self>(),
             ));
         }
@@ -260,7 +260,7 @@ trait ToFromNeBytes {
     {
         #[deny(clippy::cast_ptr_alignment)]
         unsafe {
-            std::ptr::read_unaligned((bytes.as_ptr() as *const u8) as *const Self)
+            std::ptr::read_unaligned((bytes.as_ptr().cast::<u8>()).cast::<Self>())
         }
     }
 

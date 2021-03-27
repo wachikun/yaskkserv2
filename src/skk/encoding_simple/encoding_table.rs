@@ -48,7 +48,7 @@ impl EncodingTable {
                         "0x{:>02x},0x{:>02x},0x{:>02x},",
                         euc_3[0], euc_3[1], euc_3[2]
                     ));
-                    euc_utf8_table.push_str(&Self::format_4_bytes(&utf8_8, "")?);
+                    euc_utf8_table.push_str(&Self::format_4_bytes(&utf8_8, ""));
                 }
             }
             line.clear();
@@ -57,35 +57,35 @@ impl EncodingTable {
         result.push_str(&Self::format_4_bytes(
             &header_version.to_ne_bytes(),
             "    // version",
-        )?);
+        ));
         result.push_str(&Self::format_4_bytes(
             &header_length.to_ne_bytes(),
             "    // header_length",
-        )?);
+        ));
         result.push_str(&Self::format_4_bytes(
             &header_euc_utf8_combine_length.to_ne_bytes(),
             "    // euc_utf8_combine_length",
-        )?);
+        ));
         result.push_str(&Self::format_4_bytes(
             &header_euc_utf8_length.to_ne_bytes(),
             "    // euc_utf8_length",
-        )?);
+        ));
         result.push_str(&Self::format_4_bytes(
             &header_reserved[0..4],
             "    // reserved",
-        )?);
+        ));
         result.push_str(&Self::format_4_bytes(
             &header_reserved[4..8],
             "    // reserved",
-        )?);
+        ));
         result.push_str(&Self::format_4_bytes(
             &header_reserved[8..12],
             "    // reserved",
-        )?);
+        ));
         result.push_str(&Self::format_4_bytes(
             &header_reserved[12..16],
             "    // reserved",
-        )?);
+        ));
         result.push_str(&euc_utf8_combine_table);
         result.push_str(&euc_utf8_table);
         Ok(result)
@@ -114,7 +114,7 @@ impl EncodingTable {
             header_length,
             header_euc_utf8_length,
             header_euc_utf8_combine_length,
-        )?;
+        );
         *EUC_2_TO_UTF8_VEC.write().unwrap() = euc_2_to_utf8_vec;
         *UTF8_3_TO_EUC_VEC.write().unwrap() = utf8_3_to_euc_vec;
         Ok(())
@@ -272,7 +272,7 @@ impl EncodingTable {
         header_length: usize,
         header_euc_utf8_length: usize,
         header_euc_utf8_combine_length: usize,
-    ) -> Result<SetupMapResult, SkkError> {
+    ) -> SetupMapResult {
         let mut offset =
             header_length + header_euc_utf8_combine_length * euc_utf8_combine_unit_length;
         let mut euc_2_to_utf8_vec = vec![[0; 4]; Decoder::EUC_2_TO_UTF8_VEC_INDEX_MAXIMUM + 1];
@@ -314,7 +314,7 @@ impl EncodingTable {
             }
             offset += euc_utf8_unit_length;
         }
-        Ok((euc_2_to_utf8_vec, utf8_3_to_euc_vec))
+        (euc_2_to_utf8_vec, utf8_3_to_euc_vec)
     }
 
     /// unicode から utf8 に変換し `result_utf8` へ書き込む。書き込んだサイズを返す。
@@ -397,10 +397,10 @@ impl EncodingTable {
         Ok(result)
     }
 
-    fn format_4_bytes(buffer: &[u8], suffix: &str) -> Result<String, SkkError> {
-        Ok(format!(
+    fn format_4_bytes(buffer: &[u8], suffix: &str) -> String {
+        format!(
             "0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},{}\n",
             buffer[0], buffer[1], buffer[2], buffer[3], suffix
-        ))
+        )
     }
 }

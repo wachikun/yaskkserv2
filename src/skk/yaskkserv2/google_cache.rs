@@ -66,7 +66,11 @@ impl GoogleCache {
     pub(in crate::skk) fn setup_use_rwlock_internally(
         google_cache_full_path: &str,
     ) -> Result<(), SkkError> {
-        let mut rw_lock_write = GOOGLE_CACHE_OBJECT.write().unwrap();
+        let mut rw_lock_write = if let Ok(rw_lock_write) = GOOGLE_CACHE_OBJECT.write() {
+            rw_lock_write
+        } else {
+            return Err(SkkError::CacheOpen);
+        };
         rw_lock_write.map = match Self::read(google_cache_full_path) {
             Ok(ok) => ok,
             Err(_) => GoogleCacheBTreeMap::new(),
@@ -89,7 +93,7 @@ impl GoogleCache {
             let mut hasher = Sha1::new();
             hasher.update(&buffer[SHA1SUM_LENGTH..]);
             if hasher.digest().bytes() == buffer[..SHA1SUM_LENGTH] {
-                return Ok(Self::deserialize(&buffer[SHA1SUM_LENGTH..])?);
+                return Self::deserialize(&buffer[SHA1SUM_LENGTH..]);
             }
         }
         Err(SkkError::BrokenCache)

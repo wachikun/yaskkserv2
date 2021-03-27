@@ -410,9 +410,8 @@ impl DictionaryReader {
                     *result = new_result;
                 }
                 return Ok(());
-            } else {
-                return Err(SkkError::BrokenDictionary);
             }
+            return Err(SkkError::BrokenDictionary);
         }
         Ok(())
     }
