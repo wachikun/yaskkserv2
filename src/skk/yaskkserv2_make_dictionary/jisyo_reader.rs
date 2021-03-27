@@ -100,9 +100,8 @@ impl JisyoReader {
                         if size == 1 {
                             line.clear();
                             continue 'INNER;
-                        } else {
-                            &line[1..size - 1]
                         }
+                        &line[1..size - 1]
                     } else {
                         &line[..size - 1]
                     };
