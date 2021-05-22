@@ -90,18 +90,16 @@ impl Yaskkserv2ConfigFile {
         {
             let key = "dictionary";
             if candidates.contains_key(key) && self.config.dictionary_full_path.is_empty() {
-                let tmp = candidates[key].to_owned();
-                yaskkserv2::command_line::Yaskkserv2CommandLine::dictionary_validator(
-                    tmp.to_owned(),
-                )?;
+                let tmp = candidates[key].clone();
+                yaskkserv2::command_line::Yaskkserv2CommandLine::dictionary_validator(tmp.clone())?;
                 self.config.dictionary_full_path = tmp;
             }
         }
         {
             let key = "port";
             if candidates.contains_key(key) && self.config.port == self.default_config.port {
-                let tmp = candidates[key].to_owned();
-                yaskkserv2::command_line::Yaskkserv2CommandLine::port_validator(tmp.to_owned())?;
+                let tmp = candidates[key].clone();
+                yaskkserv2::command_line::Yaskkserv2CommandLine::port_validator(tmp.clone())?;
                 self.config.port = tmp;
             }
         }
@@ -115,9 +113,9 @@ impl Yaskkserv2ConfigFile {
             if candidates.contains_key(key)
                 && self.config.listen_address == self.default_config.listen_address
             {
-                let tmp = candidates[key].to_owned();
+                let tmp = candidates[key].clone();
                 yaskkserv2::command_line::Yaskkserv2CommandLine::listen_address_validator(
-                    tmp.to_owned(),
+                    tmp.clone(),
                 )?;
                 self.config.listen_address = tmp;
             }
@@ -128,9 +126,9 @@ impl Yaskkserv2ConfigFile {
                 && self.config.hostname_and_ip_address_for_protocol_3
                     == self.default_config.hostname_and_ip_address_for_protocol_3
             {
-                let tmp = candidates[key].to_owned();
+                let tmp = candidates[key].clone();
                 yaskkserv2::command_line::Yaskkserv2CommandLine::hostname_and_ip_address_address_validator(
-                tmp.to_owned(),
+                tmp.clone(),
             )?;
                 self.config.hostname_and_ip_address_for_protocol_3 = tmp;
             }
@@ -145,7 +143,7 @@ impl Yaskkserv2ConfigFile {
             if candidates.contains_key(key)
                 && self.config.google_cache_full_path == self.default_config.google_cache_full_path
             {
-                let tmp = candidates[key].to_owned();
+                let tmp = candidates[key].clone();
                 self.config.google_cache_full_path = tmp;
             }
         }
@@ -174,7 +172,7 @@ impl Yaskkserv2ConfigFile {
             if candidates.contains_key(key)
                 && self.config.google_timing == self.default_config.google_timing
             {
-                let tmp = candidates[key].to_owned();
+                let tmp = candidates[key].clone();
                 #[allow(clippy::match_same_arms)]
                 let timing = match &tmp[..] {
                     "notfound" => GoogleTiming::NotFound,
