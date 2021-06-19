@@ -50,7 +50,7 @@ impl Jisyo {
     fn compare_and_get_hash(
         jisyo_full_path: &str,
         jisyo_hash: &Option<[u8; SHA1SUM_LENGTH]>,
-    ) -> Option<[u8; SHA1SUM_LENGTH]> {
+    ) -> [u8; SHA1SUM_LENGTH] {
         let mut hasher = Sha1::new();
         let mut buffer = Vec::new();
         let mut reader = File::open(&jisyo_full_path).unwrap();
@@ -60,7 +60,7 @@ impl Jisyo {
         if let Some(jisyo_hash) = *jisyo_hash {
             assert_eq!(hash, jisyo_hash);
         }
-        Some(hash)
+        hash
     }
 
     fn compare_and_create_dictionary(
@@ -171,12 +171,14 @@ impl Jisyo {
             Yaskkserv2MakeDictionary::run_create_jisyo(&config, &compare_utf8_jisyo_full_path)
                 .unwrap();
         }
-        self.compare_euc_jisyo_hash =
-            Self::compare_and_get_hash(&compare_euc_jisyo_full_path, &self.compare_euc_jisyo_hash);
-        self.compare_utf8_jisyo_hash = Self::compare_and_get_hash(
+        self.compare_euc_jisyo_hash = Some(Self::compare_and_get_hash(
+            &compare_euc_jisyo_full_path,
+            &self.compare_euc_jisyo_hash,
+        ));
+        self.compare_utf8_jisyo_hash = Some(Self::compare_and_get_hash(
             &compare_utf8_jisyo_full_path,
             &self.compare_utf8_jisyo_hash,
-        );
+        ));
         match dictionary_from_test_jisyo_encoding {
             Encoding::Euc => {
                 Self::compare_and_create_dictionary(

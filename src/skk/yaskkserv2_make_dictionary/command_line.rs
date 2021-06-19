@@ -41,7 +41,7 @@ impl Yaskkserv2MakeDictionaryCommandLine {
             .setting(clap::AppSettings::DeriveDisplayOrder)
             .arg(
                 clap::Arg::from_usage("[jisyo] 'SKK-JISYO (EUC or UTF8)'")
-                    .validator(Self::jisyo_validator)
+                    .validator(|v| Self::jisyo_validator(&v))
                     .multiple(true),
             )
             .arg(clap::Arg::from_usage(
@@ -110,8 +110,7 @@ impl Yaskkserv2MakeDictionaryCommandLine {
         true
     }
 
-    #[allow(clippy::needless_pass_by_value)]
-    fn jisyo_validator(value: String) -> Result<(), String> {
+    fn jisyo_validator(value: &str) -> Result<(), String> {
         if std::path::Path::new(&value).exists() {
             Ok(())
         } else {

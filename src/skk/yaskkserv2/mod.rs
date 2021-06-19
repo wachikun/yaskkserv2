@@ -156,11 +156,11 @@ impl TcpStreamSkk for std::net::TcpStream {}
 impl TcpStreamSkk for &std::net::TcpStream {}
 
 trait BufReaderSkk {
-    fn read_until_skk_server(&mut self, buf: &mut Vec<u8>) -> Result<usize, std::io::Error>;
+    fn read_until_skk_server(&mut self, buffer: &mut Vec<u8>) -> Result<usize, std::io::Error>;
 }
 
 impl BufReaderSkk for BufReader<TcpStream> {
-    fn read_until_skk_server(&mut self, buf: &mut Vec<u8>) -> Result<usize, std::io::Error> {
+    fn read_until_skk_server(&mut self, buffer: &mut Vec<u8>) -> Result<usize, std::io::Error> {
         fn find_one_character_protocol(available: &[u8]) -> Option<usize> {
             for (i, c) in available.iter().enumerate() {
                 if *c == b'0' || *c == b'2' || *c == b'3' {
@@ -182,17 +182,17 @@ impl BufReaderSkk for BufReader<TcpStream> {
                 };
                 match twoway::find_bytes(available, b" ") {
                     Some(i) => {
-                        buf.extend_from_slice(&available[..=i]);
+                        buffer.extend_from_slice(&available[..=i]);
                         (true, i + 1)
                     }
                     None =>
                     {
                         #[allow(clippy::option_if_let_else)]
                         if let Some(i) = find_one_character_protocol(available) {
-                            buf.extend_from_slice(&available[..=i]);
+                            buffer.extend_from_slice(&available[..=i]);
                             (true, i + 1)
                         } else {
-                            buf.extend_from_slice(available);
+                            buffer.extend_from_slice(available);
                             (false, available.len())
                         }
                     }
@@ -496,10 +496,10 @@ impl Yaskkserv2 {
                     HandleClientResult::Continue
                 }
             }
-            Err(e) =>
-            {
-                #[allow(clippy::if_not_else)]
-                if e.kind() != std::io::ErrorKind::WouldBlock {
+            Err(e) => {
+                if e.kind() == std::io::ErrorKind::WouldBlock {
+                    HandleClientResult::Continue
+                } else {
                     match socket.buffer_stream.get_ref().peer_addr() {
                         Ok(peer_addr) => Self::log_error(&format!(
                             "read_line() error={}  port={}",
@@ -512,8 +512,6 @@ impl Yaskkserv2 {
                     };
                     *is_shutdown = true;
                     HandleClientResult::Exit
-                } else {
-                    HandleClientResult::Continue
                 }
             }
         }

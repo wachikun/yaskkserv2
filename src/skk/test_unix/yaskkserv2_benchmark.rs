@@ -374,7 +374,7 @@ fn yaskkserv2_benchmark_binary_normal_send_sequential_test() {
     .is_sequential(true);
     ConnectSendCompare::run(parameter);
     // FIXME!
-    let _ = std::process::Command::new("kill")
+    let _droppable = std::process::Command::new("kill")
         .arg("-TERM")
         .arg(format!("{}", child.id()))
         .spawn()

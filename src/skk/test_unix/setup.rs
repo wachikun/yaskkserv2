@@ -210,6 +210,7 @@ impl JisyoDownloader {
         full_path
     }
 
+    #[allow(clippy::case_sensitive_file_extension_comparisons)]
     fn download_md5_and_archive(download_md5_url: &str, jisyo_filenames: &[&str]) -> Vec<String> {
         let mut jisyo_full_paths = Vec::new();
         assert!(download_md5_url.ends_with(".md5"));
@@ -276,6 +277,7 @@ impl JisyoDownloader {
         child.wait().unwrap();
     }
 
+    #[allow(clippy::case_sensitive_file_extension_comparisons)]
     fn extract(archive_full_path: &str) {
         if archive_full_path.ends_with(".tar.gz") {
             println!("extract tar.gz full_path={}", archive_full_path);
