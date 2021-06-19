@@ -9,11 +9,11 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 trait BufReaderSkk {
-    fn read_until_skk_jisyo(&mut self, buf: &mut Vec<u8>) -> Result<usize, std::io::Error>;
+    fn read_until_skk_jisyo(&mut self, buffer: &mut Vec<u8>) -> Result<usize, std::io::Error>;
 }
 
 impl BufReaderSkk for BufReader<std::fs::File> {
-    fn read_until_skk_jisyo(&mut self, buf: &mut Vec<u8>) -> Result<usize, std::io::Error> {
+    fn read_until_skk_jisyo(&mut self, buffer: &mut Vec<u8>) -> Result<usize, std::io::Error> {
         fn find_cr_or_lf(buffer: &[u8]) -> Option<usize> {
             for (i, c) in buffer.iter().enumerate() {
                 if *c == b'\n' || *c == b'\r' {
@@ -32,10 +32,10 @@ impl BufReaderSkk for BufReader<std::fs::File> {
                 };
                 #[allow(clippy::option_if_let_else)]
                 if let Some(i) = find_cr_or_lf(available) {
-                    buf.extend_from_slice(&available[..=i]);
+                    buffer.extend_from_slice(&available[..=i]);
                     (true, i + 1)
                 } else {
-                    buf.extend_from_slice(available);
+                    buffer.extend_from_slice(available);
                     (false, available.len())
                 }
             };

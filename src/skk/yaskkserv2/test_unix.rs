@@ -46,10 +46,9 @@ impl Yaskkserv2Debug for Yaskkserv2 {
                             let mut loop_result = true;
                             let skip = Self::get_buffer_skip_count(&buffer, size);
                             if size - skip > 0 {
-                                #[allow(clippy::match_on_vec_items)]
-                                match buffer[skip] {
-                                    b'0' => loop_result = false,
-                                    b'1' => {
+                                match buffer.get(skip) {
+                                    Some(b'0') => loop_result = false,
+                                    Some(b'1') => {
                                         self.server.handle_client_protocol_1_simple_std_net_tcp(
                                             buffer_stream.get_mut(),
                                             &mut dictionary_file,

@@ -160,7 +160,7 @@ fn test_dictionary_notfound_google_found(name: &str, port: &str, is_google_sugge
                         println!(
                             "size={}  buffer={:?}",
                             size,
-                            String::from_utf8(buffer.to_vec())
+                            String::from_utf8(buffer.clone())
                         );
                     } else {
                         println!("size={}  buffer={:x?}", size, buffer);

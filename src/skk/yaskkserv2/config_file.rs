@@ -75,11 +75,10 @@ impl Yaskkserv2ConfigFile {
             ($key: tt, $field: ident, $validator: ident) => {
                 if candidates.contains_key($key) && self.config.$field == self.default_config.$field
                 {
-                    let tmp = candidates[$key].to_owned();
-                    yaskkserv2::command_line::Yaskkserv2CommandLine::$validator(tmp.to_owned())?;
+                    yaskkserv2::command_line::Yaskkserv2CommandLine::$validator(&candidates[$key])?;
                     self.config.$field =
                         yaskkserv2::command_line::Yaskkserv2CommandLine::parse_integer(
-                            &tmp,
+                            &candidates[$key],
                             0,
                             &mut parse_integer_result,
                         );
@@ -91,16 +90,15 @@ impl Yaskkserv2ConfigFile {
             let key = "dictionary";
             if candidates.contains_key(key) && self.config.dictionary_full_path.is_empty() {
                 let tmp = candidates[key].clone();
-                yaskkserv2::command_line::Yaskkserv2CommandLine::dictionary_validator(tmp.clone())?;
+                yaskkserv2::command_line::Yaskkserv2CommandLine::dictionary_validator(&tmp)?;
                 self.config.dictionary_full_path = tmp;
             }
         }
         {
             let key = "port";
             if candidates.contains_key(key) && self.config.port == self.default_config.port {
-                let tmp = candidates[key].clone();
-                yaskkserv2::command_line::Yaskkserv2CommandLine::port_validator(tmp.clone())?;
-                self.config.port = tmp;
+                yaskkserv2::command_line::Yaskkserv2CommandLine::port_validator(&candidates[key])?;
+                self.config.port = candidates[key].clone();
             }
         }
         validate_and_set_config_integer!(
@@ -113,11 +111,10 @@ impl Yaskkserv2ConfigFile {
             if candidates.contains_key(key)
                 && self.config.listen_address == self.default_config.listen_address
             {
-                let tmp = candidates[key].clone();
                 yaskkserv2::command_line::Yaskkserv2CommandLine::listen_address_validator(
-                    tmp.clone(),
+                    &candidates[key],
                 )?;
-                self.config.listen_address = tmp;
+                self.config.listen_address = candidates[key].clone();
             }
         }
         {
@@ -126,11 +123,8 @@ impl Yaskkserv2ConfigFile {
                 && self.config.hostname_and_ip_address_for_protocol_3
                     == self.default_config.hostname_and_ip_address_for_protocol_3
             {
-                let tmp = candidates[key].clone();
-                yaskkserv2::command_line::Yaskkserv2CommandLine::hostname_and_ip_address_address_validator(
-                tmp.clone(),
-            )?;
-                self.config.hostname_and_ip_address_for_protocol_3 = tmp;
+                yaskkserv2::command_line::Yaskkserv2CommandLine::hostname_and_ip_address_address_validator(&candidates[key])?;
+                self.config.hostname_and_ip_address_for_protocol_3 = candidates[key].clone();
             }
         }
         validate_and_set_config_integer!(
