@@ -150,6 +150,7 @@ pub(in crate::skk) mod test_unix {
     struct ServerDebugImpl {}
 
     impl ServerDebugImpl {
+        #[allow(clippy::branches_sharing_code)]
         fn send_split(mut stream: &TcpStream, buffer: &[u8], split: usize) {
             if split < 2 {
                 if let Err(e) = stream.write_all(buffer) {

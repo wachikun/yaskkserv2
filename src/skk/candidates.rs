@@ -213,19 +213,17 @@ impl Candidates {
                     new_unit.2 = false;
                     // annotate は base の物を優先
                     // annotate が base に無く new に annotate が存在する場合のみ置き換える
-                    if base_unit.0.iter().find(|&&v| v == b';').is_none()
+                    if !base_unit.0.iter().any(|&v| v == b';')
                         && new_unit.0.iter().any(|&v| v == b';')
                     {
                         result_vec.extend_from_slice(new_unit.0);
-                        result_vec.push(b'/');
                     } else {
                         result_vec.extend_from_slice(base_unit.0);
-                        result_vec.push(b'/');
                     }
                 } else {
                     result_vec.extend_from_slice(base_unit.0);
-                    result_vec.push(b'/');
                 }
+                result_vec.push(b'/');
             }
         }
         for new_unit in new_raw_and_annotate_removed_and_add_flag

@@ -185,9 +185,9 @@ impl JisyoReader {
     }
 
     fn is_space_cr_lf_only(line: &[u8]) -> bool {
-        line.iter()
-            .find(|v| **v != b' ' && **v != b'\r' && **v != b'\n')
-            .is_none()
+        !line
+            .iter()
+            .any(|v| *v != b' ' && *v != b'\r' && *v != b'\n')
     }
 
     fn is_skip_and_print_warning(

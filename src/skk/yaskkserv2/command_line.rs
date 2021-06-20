@@ -102,7 +102,7 @@ impl Yaskkserv2CommandLine {
         Self::range_validator::<i32>(value, "illegal port number", 0, 65535)
     }
 
-    #[allow(clippy::clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
     pub(in crate::skk) fn max_connections_validator(value: &str) -> Result<(), String> {
         Self::range_validator::<i32>(
             value,
