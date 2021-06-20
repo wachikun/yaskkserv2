@@ -454,7 +454,6 @@ impl ConnectSendCompare {
                     .set_read_timeout(Some(std::time::Duration::from_secs(READ_TIMEOUT_SECS)))
                     .unwrap();
                 let mut buffer_stream = BufReader::new(&stream);
-                #[allow(clippy::same_item_push)]
                 for _ in 0..TEST_LOOP {
                     const RANDOM_LENGTH_MAX: usize = 1000;
                     let random_length = rand::thread_rng().gen_range(1, RANDOM_LENGTH_MAX + 1);
