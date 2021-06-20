@@ -107,8 +107,7 @@ fn remove_duplicates_test() {
     for _ in 0..OUTER_LOOP_COUNT {
         let mut compare_vec_buffer = Vec::new();
         let mut compare_vec_tmp = Vec::new();
-        let mut buffer = Vec::new();
-        buffer.push(b'/');
+        let mut buffer = vec![b'/'];
         let mut previous_u8 = b'/';
         for _ in 0..BUFFER_LOOP {
             let next_u8 = if previous_u8 != b'/' && rng.gen_range(0, 10) < 3 {
@@ -142,7 +141,7 @@ fn remove_duplicates_test() {
         let mut compare_vec_buffer_joined = vec![b'/'];
         compare_vec_buffer_joined
             .extend_from_slice(&Candidates::remove_duplicates(&compare_vec_buffer).join(&b'/'));
-        compare_vec_buffer_joined.push(b'/');
+        compare_vec_buffer_joined.resize(compare_vec_buffer_joined.len() + 1, b'/');
         assert!(Candidates::remove_duplicates_bytes(&buffer) == compare_vec_buffer_joined);
         assert!(
             Candidates::remove_duplicates_bytes(&buffer)
