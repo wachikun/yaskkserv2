@@ -541,7 +541,7 @@ pub(in crate::skk) mod test_unix {
             }
             .iter()
             .map(|v| DictionaryBlockInformation {
-                midashi: v.to_vec(),
+                midashi: v.clone(),
                 offset: 0,
                 length: 0,
             })
