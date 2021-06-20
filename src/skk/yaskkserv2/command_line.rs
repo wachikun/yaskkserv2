@@ -164,8 +164,7 @@ impl Yaskkserv2CommandLine {
         })
     }
 
-    #[allow(clippy::needless_pass_by_value)]
-    pub(in crate::skk) fn range_validator<T: std::str::FromStr + std::cmp::PartialOrd>(
+    pub(in crate::skk) fn range_validator<T: std::str::FromStr + std::cmp::PartialOrd + Copy>(
         value: &str,
         message: &str,
         min: T,

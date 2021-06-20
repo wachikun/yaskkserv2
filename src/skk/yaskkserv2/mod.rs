@@ -605,7 +605,6 @@ struct GoogleCacheObject {
 }
 
 impl GoogleCacheObject {
-    #[allow(clippy::missing_const_for_fn)]
     fn new() -> Self {
         Self {
             map: BTreeMap::new(),
