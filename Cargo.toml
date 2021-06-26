@@ -22,7 +22,8 @@ tempfile = "3.1.0"
 thiserror = "1.0.20"
 twoway = "0.2.0"
 url = "1.7.2"
-# for test
+
+[dev-dependencies]
 rand = "*"
 
 [target.'cfg(unix)'.dependencies]
