@@ -115,8 +115,8 @@ impl EncodingTable {
             header_euc_utf8_length,
             header_euc_utf8_combine_length,
         );
-        *EUC_2_TO_UTF8_VEC.write().unwrap() = euc_2_to_utf8_vec;
-        *UTF8_3_TO_EUC_VEC.write().unwrap() = utf8_3_to_euc_vec;
+        *EUC_2_TO_UTF8_VEC.get_mut_for_setup() = euc_2_to_utf8_vec;
+        *UTF8_3_TO_EUC_VEC.get_mut_for_setup() = utf8_3_to_euc_vec;
         Ok(())
     }
 

@@ -103,7 +103,8 @@
 //! `IndexAsciiHiraganaVec/IndexMap` は midashi に対応する candidates の情報を保持する `Vec/Nap` 。
 //! `Vec` と `Map` に分かれているのは高速化のため。ほとんどのケースで高速な `IndexAsciiHiraganaVec` を
 //! アクセスするだけで済む (`Map` 信頼できないデータを扱うわけではないので `FxHashMap` を使用し
-//! 高速化しているが、それでも `Vec` に比べると圧倒的に遅い) 。
+//! 高速化しているが、それでも `Vec` に比べると圧倒的に遅い。なお、 yaskkserv2 が扱う範囲では
+//! `SwissTable` の標準 `HashMap` よりも `FxHashMap` の方が高速であることに注意) 。
 //!
 //! `IndexAsciiHiraganaVec/IndexMap` の value は `DictionaryBlockInformation` の `Vec` だが、 value
 //! へ直接 key に対応するデータを持たず `Vec` に分割しているのは、探索時に扱うデータサイズを
@@ -146,7 +147,7 @@ const DICTIONARY_BLOCK_UNIT_LENGTH: usize = 2 * 1024;
 type JisyoEntriesMap = BTreeMap<Vec<u8>, Vec<u8>>;
 type TemporaryBlockMap = BTreeMap<DictionaryMidashiKey, Vec<u8>>;
 
-pub(in crate::skk) struct Yaskkserv2MakeDictionary {}
+pub(in crate::skk) struct Yaskkserv2MakeDictionary;
 
 impl Yaskkserv2MakeDictionary {
     #[allow(dead_code)]
@@ -191,8 +192,6 @@ impl Yaskkserv2MakeDictionary {
     }
 }
 
-pub(in crate::skk) struct JisyoReader {}
-
-struct JisyoCreator {}
-
-pub(in crate::skk) struct DictionaryCreator {}
+pub(in crate::skk) struct JisyoReader;
+struct JisyoCreator;
+pub(in crate::skk) struct DictionaryCreator;

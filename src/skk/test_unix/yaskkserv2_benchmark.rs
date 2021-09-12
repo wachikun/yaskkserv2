@@ -77,7 +77,7 @@ impl Yaskkserv2Test {
     crate::define_builder!(is_simple_std_use_tcp_single_thread_test, bool);
 }
 
-struct Yaskkserv2MakeDictionaryTest {}
+struct Yaskkserv2MakeDictionaryTest;
 
 impl Yaskkserv2MakeDictionaryTest {
     const LOOP: usize = 10;

@@ -147,7 +147,7 @@ pub(in crate::skk) mod test_unix {
         DictionaryFile, Server, TcpStream, TcpStreamSkk, Write, Yaskkserv2,
     };
 
-    struct ServerDebugImpl {}
+    struct ServerDebugImpl;
 
     impl ServerDebugImpl {
         #[allow(clippy::branches_sharing_code)]
