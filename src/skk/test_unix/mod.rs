@@ -68,7 +68,7 @@ fn wait_server(port: &str) {
     // std::thread::sleep(std::time::Duration::from_millis(1000));
 }
 
-pub(in crate::skk) struct Path {}
+pub(in crate::skk) struct Path;
 
 impl Path {
     const TEST_DICTIONARY: &'static str = "yaskkserv2_test_unix.dictionary";
@@ -516,10 +516,10 @@ impl ConnectSendCompare {
                         Ok(0) => return,
                         Ok(size) => match self.protocol {
                             Protocol::Protocol1 => {
-                                self.receive_line_protocol_1(&buffer, &midashi, &candidates)
+                                self.receive_line_protocol_1(&buffer, &midashi, &candidates);
                             }
                             Protocol::Protocol4 => {
-                                self.receive_line_protocol_4(&buffer, &midashi, size)
+                                self.receive_line_protocol_4(&buffer, &midashi, size);
                             }
                             Protocol::Echo => self.receive_line_protocol_echo(&buffer, &send),
                         },

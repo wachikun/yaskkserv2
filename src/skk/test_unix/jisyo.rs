@@ -417,7 +417,7 @@ impl Jisyo {
     }
 }
 
-struct EucUtf8OkuriAriNashi {}
+struct EucUtf8OkuriAriNashi;
 
 impl EucUtf8OkuriAriNashi {
     fn create_source_jisyo(name: &str, encoding: Encoding, bytes: &[u8]) -> String {

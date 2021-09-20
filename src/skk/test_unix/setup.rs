@@ -29,7 +29,7 @@ static PANIC_DEFAULT_HOOK: PanicDefaultHook =
 static PANIC_THREAD_NAME_SET: once_cell::sync::Lazy<RwLock<FxHashSet<String>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(FxHashSet::default()));
 
-pub(in crate::skk) struct JisyoDownloader {}
+pub(in crate::skk) struct JisyoDownloader;
 
 impl JisyoDownloader {
     pub(in crate::skk) fn get_jisyo_full_paths(encoding: Encoding) -> Vec<String> {
@@ -331,7 +331,7 @@ impl JisyoDownloader {
     }
 }
 
-struct OnceInit {}
+struct OnceInit;
 
 impl OnceInit {
     fn create_dictionary(config: &Config, jisyo_full_paths: &[String]) {

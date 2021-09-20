@@ -96,9 +96,8 @@ impl U8Slice for [u8] {
     }
 }
 
-struct Dictionary {}
-
-struct Candidates {}
+struct Dictionary;
+struct Candidates;
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Default)]

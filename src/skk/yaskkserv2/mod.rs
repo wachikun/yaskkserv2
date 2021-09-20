@@ -74,6 +74,16 @@ pub(in crate::skk) enum HandleClientResult {
     Exit,
 }
 
+enum RunLoopListenerResult {
+    Nop,
+    Break,
+}
+
+enum RunLoopTokenResult {
+    Nop,
+    Return,
+}
+
 pub(in crate::skk) struct DictionaryFile {
     file: File,
     seek_position: u64,
@@ -222,114 +232,6 @@ pub(in crate::skk) struct Yaskkserv2 {
     pub(in crate::skk) is_debug_force_exit_mode: bool,
 }
 
-macro_rules! run_loop_listener {
-    ($self: expr,
-     $next_socket_index: expr,
-     $sockets: expr,
-     $sockets_some_count: expr,
-     $poll: expr,
-     $_take_index_for_test: expr,
-     $listener: expr,
-     $sockets_length: expr) => {
-        match $listener.accept() {
-            Ok((socket, _)) => {
-                #[allow(clippy::cast_sign_loss)]
-                if $sockets_some_count >= $self.server.config.max_connections as usize {
-                    break;
-                }
-                #[cfg(test)]
-                {
-                    $_take_index_for_test += 1;
-                }
-                let token = Token($next_socket_index);
-                $poll.register(&socket, token, Ready::readable(), PollOpt::edge())?;
-                $sockets[usize::from(token)] = Some(MioSocket::new(socket));
-                $sockets_some_count += 1;
-                #[allow(clippy::cast_sign_loss)]
-                if $sockets_some_count < $self.server.config.max_connections as usize {
-                    $next_socket_index = Self::get_empty_sockets_index(
-                        &$sockets,
-                        $sockets_length,
-                        $next_socket_index,
-                    );
-                }
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                break;
-            }
-            Err(e) => return Err(SkkError::Io(e)),
-        }
-    };
-}
-
-macro_rules! run_loop_token {
-    ($self: expr,
-     $next_socket_index: expr,
-     $sockets: expr,
-     $sockets_some_count: expr,
-     $poll: expr,
-     $_take_index_for_test: expr,
-     $_take_count_for_test: expr,
-     $token: expr,
-     $buffer: expr,
-     $dictionary_file: expr) => {
-        #[allow(clippy::get_unwrap)]
-        let socket = match $sockets.get_mut(usize::from($token)).unwrap() {
-            Some(socket) => socket,
-            None => {
-                let message = "sockets get failed";
-                Self::log_error(message);
-                Self::print_warning(message);
-                return Ok(());
-            }
-        };
-        let mut is_shutdown = false;
-        match $self.read_until_skk_server(
-            socket,
-            &mut $buffer,
-            &mut $dictionary_file,
-            &mut is_shutdown,
-        ) {
-            HandleClientResult::Continue => {}
-            HandleClientResult::Exit => {
-                $poll.deregister(socket.buffer_stream.get_mut())?;
-                if is_shutdown {
-                    if let Err(e) = &socket.buffer_stream.get_mut().shutdown(Shutdown::Both) {
-                        Self::log_error(&format!("shutdown error={}", e));
-                    }
-                }
-                $sockets[usize::from($token)] = None;
-                $sockets_some_count -= 1;
-                $next_socket_index = usize::from($token);
-                #[cfg(test)]
-                {
-                    if $_take_count_for_test > 0
-                        && $sockets_some_count == 0
-                        && $_take_index_for_test >= $_take_count_for_test
-                    {
-                        return Ok(());
-                    }
-                }
-            }
-        }
-        #[cfg(test)]
-        {
-            if $self.is_debug_force_exit_mode {
-                if std::env::var("YASKKSERV2_TEST_DIRECTORY").is_ok() {
-                    let debug_force_exit_directory_full_path =
-                        std::path::Path::new(&std::env::var("YASKKSERV2_TEST_DIRECTORY").unwrap())
-                            .join(DEBUG_FORCE_EXIT_DIRECTORY);
-                    if debug_force_exit_directory_full_path.exists() {
-                        std::fs::remove_dir(&debug_force_exit_directory_full_path).unwrap();
-                        return Ok(());
-                    }
-                }
-            }
-        }
-        $buffer.clear();
-    };
-}
-
 impl Yaskkserv2 {
     pub(in crate::skk) fn new() -> Self {
         Self {
@@ -355,7 +257,14 @@ impl Yaskkserv2 {
             "version {} (port={})",
             PKG_VERSION, self.server.config.port
         ));
+        #[cfg(test)]
         if let Err(e) = self.run_loop(0) {
+            let message = format!("run_loop() failed {}", e);
+            Self::log_error(&message);
+            Self::print_warning(&message);
+        }
+        #[cfg(not(test))]
+        if let Err(e) = self.run_loop() {
             let message = format!("run_loop() failed {}", e);
             Self::log_error(&message);
             Self::print_warning(&message);
@@ -407,9 +316,10 @@ impl Yaskkserv2 {
     /// なお、 `Vec` は `HashMap` に比べて empty index を探す必要がある分だけ `insert()` 相当の
     /// 処理が少しだけ高くつくが、最悪のケースでもそもそも `insert()` 相当処理の実行頻度は
     /// 低いので問題にならない。
-    fn run_loop(&mut self, _take_count_for_test: usize) -> Result<(), SkkError> {
+    fn run_loop(&mut self, #[cfg(test)] take_count_for_test: usize) -> Result<(), SkkError> {
         const LISTENER: Token = Token(MAX_CONNECTION);
-        let mut _take_index_for_test = 0;
+        #[cfg(test)]
+        let mut take_index_for_test = 0;
         let mut sockets: Vec<Option<MioSocket>> = Vec::new();
         for _ in 0..self.server.config.max_connections {
             sockets.push(None);
@@ -440,37 +350,147 @@ impl Yaskkserv2 {
                 Self::print_warning(message);
             }
             for event in &events {
-                #[allow(clippy::used_underscore_binding)]
                 match event.token() {
                     LISTENER => loop {
-                        run_loop_listener!(
-                            self,
-                            next_socket_index,
-                            sockets,
-                            sockets_some_count,
-                            poll,
-                            _take_index_for_test,
-                            listener,
-                            sockets_length
-                        );
+                        match self.run_loop_listener(
+                            &mut next_socket_index,
+                            &mut sockets,
+                            &mut sockets_some_count,
+                            &poll,
+                            &listener,
+                            sockets_length,
+                            #[cfg(test)]
+                            &mut take_index_for_test,
+                        ) {
+                            Ok(RunLoopListenerResult::Break) => break,
+                            Ok(RunLoopListenerResult::Nop) => {}
+                            Err(e) => return Err(e),
+                        }
                     },
                     token => {
-                        run_loop_token!(
-                            self,
-                            next_socket_index,
-                            sockets,
-                            sockets_some_count,
-                            poll,
-                            _take_index_for_test,
-                            _take_count_for_test,
+                        match self.run_loop_token(
+                            &mut next_socket_index,
+                            &mut sockets,
+                            &mut sockets_some_count,
+                            &mut buffer,
+                            &mut dictionary_file,
+                            &poll,
                             token,
-                            buffer,
-                            dictionary_file
-                        );
+                            #[cfg(test)]
+                            &mut take_index_for_test,
+                            #[cfg(test)]
+                            take_count_for_test,
+                        ) {
+                            Ok(RunLoopTokenResult::Return) => return Ok(()),
+                            Ok(RunLoopTokenResult::Nop) => {}
+                            Err(e) => return Err(e),
+                        }
                     }
                 }
             }
         }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn run_loop_listener(
+        &self,
+        next_socket_index: &mut usize,
+        sockets: &mut [Option<MioSocket>],
+        sockets_some_count: &mut usize,
+        poll: &Poll,
+        listener: &TcpListener,
+        sockets_length: usize,
+        #[cfg(test)] take_index_for_test: &mut usize,
+    ) -> Result<RunLoopListenerResult, SkkError> {
+        match listener.accept() {
+            Ok((socket, _)) => {
+                #[allow(clippy::cast_sign_loss)]
+                if *sockets_some_count >= self.server.config.max_connections as usize {
+                    return Ok(RunLoopListenerResult::Break);
+                }
+                #[cfg(test)]
+                {
+                    *take_index_for_test += 1;
+                }
+                let token = Token(*next_socket_index);
+                poll.register(&socket, token, Ready::readable(), PollOpt::edge())?;
+                sockets[usize::from(token)] = Some(MioSocket::new(socket));
+                *sockets_some_count += 1;
+                #[allow(clippy::cast_sign_loss)]
+                if *sockets_some_count < self.server.config.max_connections as usize {
+                    *next_socket_index =
+                        Self::get_empty_sockets_index(sockets, sockets_length, *next_socket_index);
+                }
+                Ok(RunLoopListenerResult::Nop)
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                Ok(RunLoopListenerResult::Break)
+            }
+            Err(e) => Err(SkkError::Io(e)),
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn run_loop_token(
+        &mut self,
+        next_socket_index: &mut usize,
+        sockets: &mut [Option<MioSocket>],
+        sockets_some_count: &mut usize,
+        buffer: &mut Vec<u8>,
+        dictionary_file: &mut DictionaryFile,
+        poll: &Poll,
+        token: Token,
+        #[cfg(test)] take_index_for_test: &mut usize,
+        #[cfg(test)] take_count_for_test: usize,
+    ) -> Result<RunLoopTokenResult, SkkError> {
+        #[allow(clippy::get_unwrap)]
+        let socket = match sockets.get_mut(usize::from(token)).unwrap() {
+            Some(socket) => socket,
+            None => {
+                let message = "sockets get failed";
+                Self::log_error(message);
+                Self::print_warning(message);
+                return Ok(RunLoopTokenResult::Return);
+            }
+        };
+        let mut is_shutdown = false;
+        match self.read_until_skk_server(socket, buffer, dictionary_file, &mut is_shutdown) {
+            HandleClientResult::Continue => {}
+            HandleClientResult::Exit => {
+                poll.deregister(socket.buffer_stream.get_mut())?;
+                if is_shutdown {
+                    if let Err(e) = &socket.buffer_stream.get_mut().shutdown(Shutdown::Both) {
+                        Self::log_error(&format!("shutdown error={}", e));
+                    }
+                }
+                sockets[usize::from(token)] = None;
+                *sockets_some_count -= 1;
+                *next_socket_index = usize::from(token);
+                #[cfg(test)]
+                {
+                    if take_count_for_test > 0
+                        && *sockets_some_count == 0
+                        && *take_index_for_test >= take_count_for_test
+                    {
+                        return Ok(RunLoopTokenResult::Return);
+                    }
+                }
+            }
+        }
+        #[cfg(test)]
+        {
+            if self.is_debug_force_exit_mode && std::env::var("YASKKSERV2_TEST_DIRECTORY").is_ok() {
+                let debug_force_exit_directory_full_path =
+                    std::path::Path::new(&std::env::var("YASKKSERV2_TEST_DIRECTORY").unwrap())
+                        .join(DEBUG_FORCE_EXIT_DIRECTORY);
+                if debug_force_exit_directory_full_path.exists() {
+                    std::fs::remove_dir(&debug_force_exit_directory_full_path).unwrap();
+                    return Ok(RunLoopTokenResult::Return);
+                }
+            }
+        }
+        buffer.clear();
+        Ok(RunLoopTokenResult::Nop)
     }
 
     fn read_until_skk_server(
@@ -612,6 +632,5 @@ impl GoogleCacheObject {
     }
 }
 
-pub(in crate::skk) struct GoogleCache {}
-
-struct Request {}
+pub(in crate::skk) struct GoogleCache;
+struct Request;

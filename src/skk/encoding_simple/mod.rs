@@ -47,6 +47,7 @@ mod encoding_table;
 mod encoding_table_get;
 mod euc;
 
+use core::cell::UnsafeCell;
 use regex::Regex;
 use rustc_hash::FxHashMap;
 use std::fs::File;
@@ -55,10 +56,8 @@ use std::sync::RwLock;
 
 use crate::skk::{Encoding, EncodingOptions, SkkError};
 
-static EUC_2_TO_UTF8_VEC: once_cell::sync::Lazy<RwLock<Vec<[u8; 4]>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
-static UTF8_3_TO_EUC_VEC: once_cell::sync::Lazy<RwLock<Vec<[u8; 3]>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
+static EUC_2_TO_UTF8_VEC: LookupTableCell<Vec<[u8; 4]>> = LookupTableCell::new(Vec::new());
+static UTF8_3_TO_EUC_VEC: LookupTableCell<Vec<[u8; 3]>> = LookupTableCell::new(Vec::new());
 static EUC_3_TO_UTF8_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 3], [u8; 4]>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
 static UTF8_2_4_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 4], [u8; 3]>>> =
@@ -70,9 +69,50 @@ static COMBINE_UTF8_4_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 4]
 static COMBINE_UTF8_6_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 6], [u8; 3]>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
 
-pub struct Euc {}
+pub struct LookupTableCell<T> {
+    cell: UnsafeCell<T>,
+    #[allow(dead_code)]
+    #[cfg(debug_assertions)]
+    debug_lock: UnsafeCell<bool>,
+}
 
-pub struct Utility {}
+impl<T> LookupTableCell<T> {
+    pub const fn new(value: T) -> Self {
+        Self {
+            cell: UnsafeCell::new(value),
+            #[cfg(debug_assertions)]
+            debug_lock: UnsafeCell::new(false),
+        }
+    }
+
+    #[allow(clippy::mut_from_ref)]
+    pub fn get_mut_for_setup(&self) -> &mut T {
+        unsafe {
+            #[cfg(debug_assertions)]
+            {
+                *self.debug_lock.get() = true;
+            }
+            &mut *self.cell.get()
+        }
+    }
+
+    #[allow(clippy::inline_always)]
+    #[inline(always)]
+    pub fn get(&self) -> &T {
+        unsafe {
+            #[cfg(debug_assertions)]
+            {
+                assert!(*self.debug_lock.get());
+            }
+            &*self.cell.get()
+        }
+    }
+}
+
+unsafe impl<T> Sync for LookupTableCell<T> {}
+
+pub struct Euc;
+pub struct Utility;
 
 impl Utility {
     pub(crate) fn contains_euc_2(euc_2_to_utf8_vec: &[[u8; 4]], index: usize) -> bool {
@@ -158,8 +198,6 @@ impl Utility {
     }
 }
 
-struct Decoder {}
-
-struct Encoder {}
-
-pub struct EncodingTable {}
+struct Decoder;
+struct Encoder;
+pub struct EncodingTable;

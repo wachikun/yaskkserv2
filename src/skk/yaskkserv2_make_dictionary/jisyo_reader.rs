@@ -196,21 +196,19 @@ impl JisyoReader {
         full_path: &str,
         line_number: &mut usize,
     ) -> bool {
-        macro_rules! print_skip_warning_and_add_line_number {
-            ($string: tt) => {
-                let line_string = match Self::get_line_string(&chomped_line, jisyo_encoding) {
-                    Ok(ok) => ok,
-                    Err(_) => String::new(),
-                };
-                Yaskkserv2MakeDictionary::print_warning(&format!(
-                    concat!("SKIPPED! (", $string, r#") {}:{} {:?}"#),
-                    full_path, line_number, &line_string
-                ));
-                *line_number += 1;
+        let mut print_skip_warning_and_add_line_number = |message: &str| {
+            let line_string = match Self::get_line_string(chomped_line, jisyo_encoding) {
+                Ok(ok) => ok,
+                Err(_) => String::new(),
             };
-        }
+            Yaskkserv2MakeDictionary::print_warning(&format!(
+                "SKIPPED! ({}) {}:{} {:?}",
+                message, full_path, line_number, &line_string
+            ));
+            *line_number += 1;
+        };
         if chomped_line.is_empty() || Self::is_space_cr_lf_only(chomped_line) {
-            print_skip_warning_and_add_line_number!("EMPTY LINE");
+            print_skip_warning_and_add_line_number("EMPTY LINE");
             return true;
         }
         if chomped_line[0] == b';' {
@@ -218,37 +216,37 @@ impl JisyoReader {
             return true;
         }
         if chomped_line[0] == b' ' {
-            print_skip_warning_and_add_line_number!("BEGIN SPACE");
+            print_skip_warning_and_add_line_number("BEGIN SPACE");
             return true;
         }
         if chomped_line[0] == b'\t' {
-            print_skip_warning_and_add_line_number!("BEGIN TAB");
+            print_skip_warning_and_add_line_number("BEGIN TAB");
             return true;
         }
         if chomped_line.len() < JISYO_MINIMUM_LINE_LENGTH {
-            print_skip_warning_and_add_line_number!("LINE TOO SHORT");
+            print_skip_warning_and_add_line_number("LINE TOO SHORT");
             return true;
         }
         if chomped_line.len() > JISYO_MAXIMUM_LINE_LENGTH {
-            print_skip_warning_and_add_line_number!("LINE TOO LONG");
+            print_skip_warning_and_add_line_number("LINE TOO LONG");
             return true;
         }
         let space = if let Some(space) = twoway::find_bytes(chomped_line, b" ") {
             space
         } else {
-            print_skip_warning_and_add_line_number!("SPACE NOT FOUND");
+            print_skip_warning_and_add_line_number("SPACE NOT FOUND");
             return true;
         };
         if chomped_line.len() < space + JISYO_MINIMUM_CANDIDATES_LENGTH {
-            print_skip_warning_and_add_line_number!("CANDIDATES TOO SHORT");
+            print_skip_warning_and_add_line_number("CANDIDATES TOO SHORT");
             return true;
         }
         if chomped_line[space + 1] == b' ' {
-            print_skip_warning_and_add_line_number!("MULTI SPACE");
+            print_skip_warning_and_add_line_number("MULTI SPACE");
             return true;
         }
         if twoway::find_bytes(&chomped_line[space + 1..], b"//").is_some() {
-            print_skip_warning_and_add_line_number!("ILLEGAL CANDIDATES");
+            print_skip_warning_and_add_line_number("ILLEGAL CANDIDATES");
             return true;
         }
         false

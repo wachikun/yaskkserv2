@@ -66,10 +66,10 @@ impl Yaskkserv2Debug for Yaskkserv2 {
                     } else {
                         match buffer_stream.get_ref().peer_addr() {
                             Ok(peer_addr) => {
-                                Self::log_error(&format!("read_line() error={}", peer_addr))
+                                Self::log_error(&format!("read_line() error={}", peer_addr));
                             }
                             Err(e) => {
-                                Self::log_error(&format!("peer_address() get failed error={}", e))
+                                Self::log_error(&format!("peer_address() get failed error={}", e));
                             }
                         };
                         if let Err(e) = buffer_stream.get_mut().shutdown(Shutdown::Both) {

@@ -213,7 +213,7 @@ fn yaskkserv2_dictionary_notfound_google_found_enable_google_suggest_test() {
     test_dictionary_notfound_google_found(name, "12601", is_google_suggest_enabled);
 }
 
-struct MaxConnections {}
+struct MaxConnections;
 
 impl MaxConnections {
     fn spawn(
@@ -416,7 +416,7 @@ fn yaskkserv2_max_connections_128_test() {
     setup::exit();
 }
 
-struct TestConnections {}
+struct TestConnections;
 
 // 大量に connection して正常終了するかの test
 impl TestConnections {
