@@ -135,7 +135,6 @@ pub(in crate::skk) trait TcpStreamSkk: Write {
         }
         if let Err(e) = self.flush() {
             Yaskkserv2::log_error(&format!("flush() failed {}", e));
-            return;
         }
     }
 
