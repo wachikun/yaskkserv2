@@ -38,3 +38,8 @@ env_logger = "0.7.1"
 assert_paranoia = []
 benchmark = []
 print_debug_for_benchmark = []
+
+[profile.production]
+inherits = "release"
+lto = "fat"
+strip = "symbols"
