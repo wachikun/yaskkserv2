@@ -76,7 +76,8 @@ impl Yaskkserv2CommandLine {
             .arg(clap::Arg::from_usage("--google-japanese-input=[TIMING] 'enable google japanese input (default: notfound)'")
                  .possible_values(&["notfound", "disable", "last", "first"]))
             .arg(clap::Arg::from_usage("--google-suggest 'enable google suggest'"))
-            .arg(clap::Arg::from_usage("--google-use-http 'use http (default: https)'"));
+            .arg(clap::Arg::from_usage("--google-use-http 'use http (default: https)'"))
+            .arg(clap::Arg::from_usage("--midashi-utf8 'use utf8 (default: euc)'"));
         let matches = app
             .get_matches_from_safe_borrow(std::env::args_os())
             .unwrap_or_else(|e| e.exit());
@@ -251,6 +252,9 @@ impl Yaskkserv2CommandLine {
             } else {
                 self.config.is_http_enabled = true;
             }
+        }
+        if matches.is_present("midashi-utf8") {
+            self.config.is_midashi_utf8 = true;
         }
         if matches.is_present("google-suggest") {
             if self.config.google_timing == GoogleTiming::Disable {

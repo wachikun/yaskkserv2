@@ -121,6 +121,7 @@ pub(in crate::skk) struct Config {
     is_http_enabled: bool,
     is_google_cache_enabled: bool,
     is_google_suggest_enabled: bool,
+    is_midashi_utf8: bool,
     encoding: Encoding,
     is_no_daemonize: bool,
     is_verbose: bool,

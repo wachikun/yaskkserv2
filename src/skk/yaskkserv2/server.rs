@@ -30,14 +30,44 @@ impl Server {
         let stream = buffer_stream.get_mut();
         match buffer[0] {
             b'0' => return HandleClientResult::Exit,
-            b'1' => self.handle_client_protocol_1(stream, dictionary_file, buffer),
+            b'1' => {
+                if self.config.is_midashi_utf8 {
+                    let utf8_to_euc_buffer = crate::skk::encoding_simple::Euc::encode(buffer);
+                    if let Ok(mut utf8_to_euc_buffer) = utf8_to_euc_buffer {
+                        self.handle_client_protocol_1(
+                            stream,
+                            dictionary_file,
+                            &mut utf8_to_euc_buffer,
+                        );
+                    } else {
+                        Self::send_and_log_protocol_error(stream, "1", &SkkError::Encoding);
+                    }
+                } else {
+                    self.handle_client_protocol_1(stream, dictionary_file, buffer);
+                }
+            }
             b'2' => stream.write_all_flush_ignore_error(format!("{} ", PKG_VERSION).as_bytes()),
             b'3' => stream.write_all_flush_ignore_error(
                 self.config
                     .hostname_and_ip_address_for_protocol_3
                     .as_bytes(),
             ),
-            b'4' => self.handle_client_protocol_4(stream, dictionary_file, buffer),
+            b'4' => {
+                if self.config.is_midashi_utf8 {
+                    let utf8_to_euc_buffer = crate::skk::encoding_simple::Euc::encode(buffer);
+                    if let Ok(mut utf8_to_euc_buffer) = utf8_to_euc_buffer {
+                        self.handle_client_protocol_4(
+                            stream,
+                            dictionary_file,
+                            &mut utf8_to_euc_buffer,
+                        );
+                    } else {
+                        Self::send_and_log_protocol_error(stream, "4", &SkkError::Encoding);
+                    }
+                } else {
+                    self.handle_client_protocol_4(stream, dictionary_file, buffer);
+                }
+            }
             _ => {
                 let _ignore_error = stream.write_error_flush();
             }
