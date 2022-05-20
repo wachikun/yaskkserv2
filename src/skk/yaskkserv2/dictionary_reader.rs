@@ -139,21 +139,26 @@ impl DictionaryReader {
         &self,
         dictionary_midashi_key: DictionaryMidashiKey,
     ) -> Option<&[DictionaryBlockInformation]> {
-        if let Some(index) = OnMemory::get_ascii_hiragana_vec_index(dictionary_midashi_key) {
-            if self.on_memory.index_ascii_hiragana_vec[index].is_empty() {
-                None
-            } else {
-                Some(&self.on_memory.index_ascii_hiragana_vec[index])
-            }
-        } else if self
-            .on_memory
-            .index_map
-            .contains_key(&dictionary_midashi_key)
-        {
-            Some(&self.on_memory.index_map[&dictionary_midashi_key])
-        } else {
-            None
-        }
+        OnMemory::get_ascii_hiragana_vec_index(dictionary_midashi_key).map_or_else(
+            || {
+                if self
+                    .on_memory
+                    .index_map
+                    .contains_key(&dictionary_midashi_key)
+                {
+                    Some(self.on_memory.index_map[&dictionary_midashi_key].as_slice())
+                } else {
+                    None
+                }
+            },
+            |index| {
+                if self.on_memory.index_ascii_hiragana_vec[index].is_empty() {
+                    None
+                } else {
+                    Some(&self.on_memory.index_ascii_hiragana_vec[index])
+                }
+            },
+        )
     }
 
     fn read_google_candidates(&self, midashi: &[u8], result: &mut Vec<u8>) -> Result<(), SkkError> {
