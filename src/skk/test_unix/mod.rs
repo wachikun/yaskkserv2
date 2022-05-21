@@ -77,9 +77,10 @@ impl Path {
     const ECHO_SERVER_SOURCE: &'static str = "echo_server.c";
 
     pub(in crate::skk) fn get_full_path(full_path: &str) -> String {
-        if std::env::var("YASKKSERV2_TEST_DIRECTORY").is_err() {
-            panic!("\n\n\"YASKKSERV2_TEST_DIRECTORY\" environment variable not set\n\n");
-        }
+        assert!(
+            std::env::var("YASKKSERV2_TEST_DIRECTORY").is_ok(),
+            "\n\n\"YASKKSERV2_TEST_DIRECTORY\" environment variable not set\n\n"
+        );
         String::from(
             std::path::Path::new(&std::env::var("YASKKSERV2_TEST_DIRECTORY").unwrap())
                 .join(full_path)
@@ -145,6 +146,7 @@ struct ConnectSendCompareRunParameter {
     threads: usize,
     max_server_completions: usize,
     is_compare: bool,
+    is_midashi_utf8: bool,
     is_yaskkserv: bool,
     is_send_lf: bool,
     is_random_lf_or_crlf: bool,
@@ -153,7 +155,13 @@ struct ConnectSendCompareRunParameter {
 }
 
 impl ConnectSendCompareRunParameter {
-    fn new(jisyo_full_path: &str, name: &str, port: &str, protocol: Protocol) -> Self {
+    fn new(
+        jisyo_full_path: &str,
+        name: &str,
+        port: &str,
+        protocol: Protocol,
+        is_midashi_utf8: bool,
+    ) -> Self {
         Self {
             jisyo_full_path: String::from(jisyo_full_path),
             name: String::from(name),
@@ -163,6 +171,7 @@ impl ConnectSendCompareRunParameter {
             threads: 1,
             max_server_completions: DEFAULT_MAX_SERVER_COMPLETIONS as usize,
             is_compare: true,
+            is_midashi_utf8,
             ..Self::default()
         }
     }
@@ -197,6 +206,7 @@ struct ConnectSendCompare {
     is_send_lf: bool,
     is_random_lf_or_crlf: bool,
     is_send_broken_binary: bool,
+    is_midashi_utf8: bool,
 }
 
 struct GetMidashiSendCandidatesResult {
@@ -379,7 +389,7 @@ impl ConnectSendCompare {
                     Protocol::Protocol4 => send.push(b'4'),
                     Protocol::Echo => {}
                 }
-                let midashi = if self.encoding == Encoding::Utf8 {
+                let midashi = if self.encoding == Encoding::Utf8 && !self.is_midashi_utf8 {
                     encoding_simple::Euc::encode(&entry[0..midashi_space_find]).unwrap()
                 } else {
                     entry[0..midashi_space_find].to_vec()
@@ -553,6 +563,7 @@ impl ConnectSendCompare {
         connect_send_compare.is_random_lf_or_crlf = parameter.is_random_lf_or_crlf;
         connect_send_compare.is_send_broken_binary = parameter.is_send_broken_binary;
         connect_send_compare.max_server_completions = parameter.max_server_completions;
+        connect_send_compare.is_midashi_utf8 = parameter.is_midashi_utf8;
     }
 
     fn run(parameter: ConnectSendCompareRunParameter) {

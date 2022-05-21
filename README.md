@@ -159,9 +159,9 @@ $ yaskkserv2_make_dictionary --utf8 --dictionary-filename=/tmp/dictionary.yaskks
 
 ### UTF-8 dictionary (uim-skk など)
 
-uim-skk などで yaskkserv2 を使用する場合は `--midashi-utf8` オプションで、 UTF-8 で送信される見出しを受け付けるよう設定する必要があります。
+UTF-8 対応の uim-skk などで yaskkserv2 を使用する場合は、 `--midashi-utf8` オプションで、 UTF-8 で送信される見出しを受け付けるよう設定する必要があります。
 
-`--midashi-utf8` オプションは、 yaskkserv2 内部で UTF-8 は EUC へ変換されるため、絵文字などの見出しは使用できない制限があります(見出しなので問題はないと思いますが)。
+`--midashi-utf8` オプションは、 yaskkserv2 内部で UTF-8 を EUC へ変換するため、絵文字などの見出しは使用できない制限があります(見出しは基本ひらがなであるため、問題はないと思いますが)。
 
 
 

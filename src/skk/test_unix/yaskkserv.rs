@@ -54,12 +54,13 @@ fn yaskkserv_core(
         }
     };
     wait_server(port);
-    let parameter = ConnectSendCompareRunParameter::new(jisyo_full_path, name, port, protocol)
-        .encoding(Encoding::Euc)
-        .is_yaskkserv(true)
-        .is_compare(false)
-        .is_sequential(is_sequential)
-        .threads(threads);
+    let parameter =
+        ConnectSendCompareRunParameter::new(jisyo_full_path, name, port, protocol, false)
+            .encoding(Encoding::Euc)
+            .is_yaskkserv(true)
+            .is_compare(false)
+            .is_sequential(is_sequential)
+            .threads(threads);
     ConnectSendCompare::run(parameter);
     // FIXME! この kill だけでは処理できないケースが多々ある
     let _droppable = std::process::Command::new("kill")
