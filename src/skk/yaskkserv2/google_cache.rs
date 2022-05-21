@@ -148,7 +148,7 @@ mod test_unix {
                     ..entry.len() - SLASH_LENGTH - LF_LENGTH];
                 let splited_candidates = candidates
                     .split(|v| *v == b'/')
-                    .map(|v| v.to_vec())
+                    .map(&<[u8]>::to_vec)
                     .collect::<Vec<Vec<u8>>>();
                 map.insert(midashi.to_vec(), splited_candidates);
             }

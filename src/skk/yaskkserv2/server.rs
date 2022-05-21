@@ -277,9 +277,7 @@ pub(in crate::skk) mod test_unix {
             dictionary_file: &mut DictionaryFile,
             buffer: &mut [u8],
         ) {
-            if !Self::validate_buffer_for_protocol_1_and_4(buffer) {
-                panic!("error");
-            }
+            assert!(Self::validate_buffer_for_protocol_1_and_4(buffer), "error");
             match self.dictionary.read_candidates(dictionary_file, buffer) {
                 Ok(mut candidates) => {
                     if Yaskkserv2::is_empty_candidates(&candidates) {

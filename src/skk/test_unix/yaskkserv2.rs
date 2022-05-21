@@ -40,19 +40,20 @@ fn get_top_character_map(encoding: Encoding) -> BTreeMap<DictionaryMidashiKey, V
             &Path::get_full_path_yaskkserv2_jisyo(Encoding::Euc),
         );
         for entry in &jisyo_entries {
-            if let Some(space_find) = twoway::find_bytes(entry, b" ") {
-                let midashi = &entry[..space_find];
-                if !DictionaryReader::is_okuri_ari(midashi) {
-                    let dictionary_midashi_key =
-                        Dictionary::get_dictionary_midashi_key(entry).unwrap();
-                    temporary_character_map
-                        .entry(dictionary_midashi_key)
-                        .or_insert_with(Vec::new)
-                        .push(midashi.to_vec());
-                }
-            } else {
-                panic!("illegal entry");
-            }
+            twoway::find_bytes(entry, b" ").map_or_else(
+                || panic!("illegal entry"),
+                |space_find| {
+                    let midashi = &entry[..space_find];
+                    if !DictionaryReader::is_okuri_ari(midashi) {
+                        let dictionary_midashi_key =
+                            Dictionary::get_dictionary_midashi_key(entry).unwrap();
+                        temporary_character_map
+                            .entry(dictionary_midashi_key)
+                            .or_insert_with(Vec::new)
+                            .push(midashi.to_vec());
+                    }
+                },
+            );
         }
     }
     for (key, value) in &mut temporary_character_map {
@@ -71,11 +72,12 @@ fn get_top_character_map(encoding: Encoding) -> BTreeMap<DictionaryMidashiKey, V
     top_character_map
 }
 
-fn test_abbrev(port: &str, encoding: Encoding) {
+fn test_abbrev(port: &str, encoding: Encoding, midashi_encoding: Encoding) {
     let config = Config::new()
         .port(String::from(port))
         .encoding(encoding)
         .dictionary_full_path(Path::get_full_path_yaskkserv2_dictionary(encoding))
+        .is_midashi_utf8(midashi_encoding == Encoding::Utf8)
         .max_server_completions(64 * 1024);
     let threads = 1;
     let thread_handle = run_and_wait_simple_server(&config, get_take_count(threads));
@@ -92,7 +94,16 @@ fn test_abbrev(port: &str, encoding: Encoding) {
                     _ => panic!("illegal dictionary_midashi_key"),
                 }
                 send_data.push(b' ');
-                buffer_stream.get_mut().write_all_flush(&send_data).unwrap();
+                if midashi_encoding == Encoding::Utf8 {
+                    let utf8_send_data =
+                        crate::skk::encoding_simple::Euc::decode(&send_data).unwrap();
+                    buffer_stream
+                        .get_mut()
+                        .write_all_flush(&utf8_send_data)
+                        .unwrap();
+                } else {
+                    buffer_stream.get_mut().write_all_flush(&send_data).unwrap();
+                }
                 let mut buffer = Vec::new();
                 match buffer_stream.read_until(b'\n', &mut buffer) {
                     Ok(size) => {
@@ -182,7 +193,7 @@ fn yaskkserv2_abbrev_euc_test() {
     let name = "yaskkserv2_abbrev_euc";
     setup::setup_and_wait(name);
     let port = "12505";
-    test_abbrev(port, Encoding::Euc);
+    test_abbrev(port, Encoding::Euc, Encoding::Euc);
     setup::exit();
 }
 
@@ -191,7 +202,25 @@ fn yaskkserv2_abbrev_utf8_test() {
     let name = "yaskkserv2_abbrev_utf8";
     setup::setup_and_wait(name);
     let port = "12506";
-    test_abbrev(port, Encoding::Utf8);
+    test_abbrev(port, Encoding::Utf8, Encoding::Euc);
+    setup::exit();
+}
+
+#[test]
+fn yaskkserv2_abbrev_euc_midashi_utf8_test() {
+    let name = "yaskkserv2_abbrev_euc_midashi_utf8";
+    setup::setup_and_wait(name);
+    let port = "12507";
+    test_abbrev(port, Encoding::Euc, Encoding::Utf8);
+    setup::exit();
+}
+
+#[test]
+fn yaskkserv2_abbrev_utf8_midashi_utf8_test() {
+    let name = "yaskkserv2_abbrev_utf8_midashi_utf8";
+    setup::setup_and_wait(name);
+    let port = "12508";
+    test_abbrev(port, Encoding::Utf8, Encoding::Utf8);
     setup::exit();
 }
 
