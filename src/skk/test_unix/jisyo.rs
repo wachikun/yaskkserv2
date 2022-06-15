@@ -440,8 +440,7 @@ impl EucUtf8OkuriAriNashi {
     fn compare(encoding_table: &[u8], dictionary_encoding: Encoding, source_jisyo_full_path: &str) {
         let dictionary_full_path = format!(
             "{}.{}.dictionary",
-            source_jisyo_full_path,
-            dictionary_encoding.to_string()
+            source_jisyo_full_path, dictionary_encoding
         );
         let euc_jisyo_full_path = format!("{}.euc.jisyo", &dictionary_full_path);
         let utf8_jisyo_full_path = format!("{}.utf8.jisyo", &dictionary_full_path);
@@ -479,7 +478,7 @@ impl EucUtf8OkuriAriNashi {
             .split(|v| *v == b'\n')
             .into_iter()
             .skip(1)
-            .map(|v| v.to_vec())
+            .map(&<[u8]>::to_vec)
             .collect::<Vec<Vec<u8>>>();
         let utf8_jisyo_bytes = utf8_jisyo_buffer
             .split(|v| *v == b'\n')

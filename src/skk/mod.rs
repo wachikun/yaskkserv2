@@ -121,6 +121,7 @@ pub(in crate::skk) struct Config {
     is_http_enabled: bool,
     is_google_cache_enabled: bool,
     is_google_suggest_enabled: bool,
+    is_midashi_utf8: bool,
     encoding: Encoding,
     is_no_daemonize: bool,
     is_verbose: bool,
@@ -165,6 +166,7 @@ impl Config {
     define_builder!(is_http_enabled, bool);
     define_builder!(is_google_cache_enabled, bool);
     define_builder!(is_google_suggest_enabled, bool);
+    define_builder!(is_midashi_utf8, bool);
     define_builder!(encoding, Encoding);
     define_builder!(is_no_daemonize, bool);
     define_builder!(is_verbose, bool);

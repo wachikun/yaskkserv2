@@ -61,7 +61,7 @@ fn connect_for_echo_server(name: &str, port: &'static str, is_sequential: bool, 
     let jisyo_full_path = &Path::get_full_path_yaskkserv2_jisyo(Encoding::Utf8);
     wait_server(port);
     let parameter =
-        ConnectSendCompareRunParameter::new(jisyo_full_path, name, port, Protocol::Echo)
+        ConnectSendCompareRunParameter::new(jisyo_full_path, name, port, Protocol::Echo, false)
             .encoding(Encoding::Utf8)
             .is_sequential(is_sequential)
             .threads(threads)
@@ -222,7 +222,7 @@ fn echo_server_c_server(
     threads: usize,
 ) {
     let child = match std::process::Command::new(Path::get_full_path_echo_server())
-        .arg(port.to_string())
+        .arg(port)
         .arg(format!("{}", get_take_count(threads)))
         .spawn()
     {

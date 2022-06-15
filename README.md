@@ -122,7 +122,7 @@ dictionary はアーキテクチャ依存です。異なるアーキテクチャ
 
 
 
-### UTF-8 dictionary
+### UTF-8 dictionary (Emacs)
 
 **SKK protocol は EUC を要求するため、 ddskk の関数 `skk-open-server` を UTF-8 で受信するように書き換える必要があります。**
 
@@ -153,6 +153,17 @@ $ yaskkserv2_make_dictionary --utf8 --dictionary-filename=/tmp/dictionary.yaskks
 ```
 
 <sub><span id="footnote6">6</span>: client -> server は EUC のまま、 server -> client だけが UTF-8 になります。</sub>
+
+
+
+
+### UTF-8 dictionary (UTF-8 対応の uim-skk など)
+
+UTF-8 対応の uim-skk などで yaskkserv2 を使用する場合は、 `--midashi-utf8` オプションで、 UTF-8 で送信される見出しを受け付けるよう設定する必要があります。
+
+`--midashi-utf8` オプションは、 yaskkserv2 内部で UTF-8 の見出しを EUC へ変換して使用するため、絵文字などの見出しは使用できない制限があります(見出しは基本的にひらがなであるため、通常の用途では問題とはなりません)。
+
+
 
 
 ### yaskkserv2 dictionary から SKK 辞書の作成 (逆変換)

@@ -41,6 +41,7 @@ impl Yaskkserv2Test {
         let thread_is_simple_std_use_tcp_single_thread_test =
             self.is_simple_std_use_tcp_single_thread_test;
         let thread_is_force_exit_mode = self.is_send_broken_binary;
+        let is_midashi_utf8 = thread_config.is_midashi_utf8;
         let thread_handle = std::thread::Builder::new()
             .name(String::from(std::thread::current().name().unwrap()))
             .spawn(move || {
@@ -60,6 +61,7 @@ impl Yaskkserv2Test {
             &self.name,
             &self.config.port,
             protocol,
+            is_midashi_utf8,
         )
         .encoding(self.config.encoding)
         .is_random_lf_or_crlf(self.is_random_lf_or_crlf)
@@ -170,7 +172,9 @@ fn yaskkserv2_benchmark_003_abbrev_random_euc_test() {
 fn yaskkserv2_benchmark_010_normal_send_sequential_utf8_test() {
     let name = "yaskkserv2_benchmark_010_normal_send_sequential_utf8";
     setup::setup_and_wait(name);
-    let config = Config::new().port(String::from("12010"));
+    let config = Config::new()
+        .port(String::from("12010"))
+        .encoding(Encoding::Utf8);
     Yaskkserv2Test::new(name, &config)
         .is_sequential(true)
         .run(Protocol::Protocol1);
@@ -181,7 +185,9 @@ fn yaskkserv2_benchmark_010_normal_send_sequential_utf8_test() {
 fn yaskkserv2_benchmark_011_normal_send_random_utf8_test() {
     let name = "yaskkserv2_benchmark_011_normal_send_random_utf8";
     setup::setup_and_wait(name);
-    let config = Config::new().port(String::from("12011"));
+    let config = Config::new()
+        .port(String::from("12011"))
+        .encoding(Encoding::Utf8);
     Yaskkserv2Test::new(name, &config).run(Protocol::Protocol1);
     setup::exit();
 }
@@ -190,7 +196,9 @@ fn yaskkserv2_benchmark_011_normal_send_random_utf8_test() {
 fn yaskkserv2_benchmark_012_abbrev_sequential_utf8_test() {
     let name = "yaskkserv2_benchmark_012_abbrev_sequential_utf8";
     setup::setup_and_wait(name);
-    let config = Config::new().port(String::from("12012"));
+    let config = Config::new()
+        .port(String::from("12012"))
+        .encoding(Encoding::Utf8);
     Yaskkserv2Test::new(name, &config)
         .is_sequential(true)
         .run(Protocol::Protocol4);
@@ -201,8 +209,36 @@ fn yaskkserv2_benchmark_012_abbrev_sequential_utf8_test() {
 fn yaskkserv2_benchmark_013_abbrev_random_utf8_test() {
     let name = "yaskkserv2_benchmark_013_abbrev_random_utf8";
     setup::setup_and_wait(name);
-    let config = Config::new().port(String::from("12013"));
+    let config = Config::new()
+        .port(String::from("12013"))
+        .encoding(Encoding::Utf8);
     Yaskkserv2Test::new(name, &config).run(Protocol::Protocol4);
+    setup::exit();
+}
+
+#[test]
+fn yaskkserv2_benchmark_014_normal_send_sequential_utf8_midashi_utf8_test() {
+    let name = "yaskkserv2_benchmark_014_normal_send_sequential_utf8_midashi_utf8_test";
+    setup::setup_and_wait(name);
+    let config = Config::new()
+        .port(String::from("12014"))
+        .encoding(Encoding::Utf8)
+        .is_midashi_utf8(true);
+    Yaskkserv2Test::new(name, &config)
+        .is_sequential(true)
+        .run(Protocol::Protocol1);
+    setup::exit();
+}
+
+#[test]
+fn yaskkserv2_benchmark_015_normal_send_random_utf8_midashi_utf8_test() {
+    let name = "yaskkserv2_benchmark_015_normal_send_random_utf8_midashi_utf8_test";
+    setup::setup_and_wait(name);
+    let config = Config::new()
+        .port(String::from("12015"))
+        .encoding(Encoding::Utf8)
+        .is_midashi_utf8(true);
+    Yaskkserv2Test::new(name, &config).run(Protocol::Protocol1);
     setup::exit();
 }
 
@@ -264,7 +300,9 @@ fn yaskkserv2_benchmark_103_abbrev_random_euc_multithreads_test() {
 fn yaskkserv2_benchmark_110_normal_send_sequential_multithreads_utf8_test() {
     let name = "yaskkserv2_benchmark_110_normal_send_sequential_multithreads_utf8";
     setup::setup_and_wait(name);
-    let config = Config::new().port(String::from("12110"));
+    let config = Config::new()
+        .port(String::from("12110"))
+        .encoding(Encoding::Utf8);
     Yaskkserv2Test::new(name, &config)
         .is_sequential(true)
         .threads(MANY_THREADS)
@@ -276,7 +314,9 @@ fn yaskkserv2_benchmark_110_normal_send_sequential_multithreads_utf8_test() {
 fn yaskkserv2_benchmark_111_normal_send_random_multithreads_utf8_test() {
     let name = "yaskkserv2_benchmark_111_normal_send_random_multithreads_utf8";
     setup::setup_and_wait(name);
-    let config = Config::new().port(String::from("12111"));
+    let config = Config::new()
+        .port(String::from("12111"))
+        .encoding(Encoding::Utf8);
     Yaskkserv2Test::new(name, &config)
         .threads(MANY_THREADS)
         .run(Protocol::Protocol1);
@@ -287,7 +327,9 @@ fn yaskkserv2_benchmark_111_normal_send_random_multithreads_utf8_test() {
 fn yaskkserv2_benchmark_112_abbrev_sequential_multithreads_utf8_test() {
     let name = "yaskkserv2_benchmark_112_abbrev_sequential_multithreads_utf8";
     setup::setup_and_wait(name);
-    let config = Config::new().port(String::from("12112"));
+    let config = Config::new()
+        .port(String::from("12112"))
+        .encoding(Encoding::Utf8);
     Yaskkserv2Test::new(name, &config)
         .is_sequential(true)
         .threads(MANY_THREADS)
@@ -299,7 +341,9 @@ fn yaskkserv2_benchmark_112_abbrev_sequential_multithreads_utf8_test() {
 fn yaskkserv2_benchmark_113_abbrev_random_multithreads_utf8_test() {
     let name = "yaskkserv2_benchmark_113_abbrev_random_multithreads_utf8";
     setup::setup_and_wait(name);
-    let config = Config::new().port(String::from("12113"));
+    let config = Config::new()
+        .port(String::from("12113"))
+        .encoding(Encoding::Utf8);
     Yaskkserv2Test::new(name, &config)
         .threads(MANY_THREADS)
         .run(Protocol::Protocol4);
@@ -368,6 +412,7 @@ fn yaskkserv2_benchmark_binary_normal_send_sequential_test() {
         name,
         port,
         Protocol::Protocol1,
+        false,
     )
     .is_compare(false)
     .encoding(Encoding::Utf8)
