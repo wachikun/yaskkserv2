@@ -6,7 +6,7 @@ use crate::skk::{
     DEFAULT_GOOGLE_CACHE_EXPIRE_SECONDS, DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH,
     DEFAULT_GOOGLE_TIMEOUT_MILLISECONDS, DEFAULT_HOSTNAME_AND_IP_ADDRESS_FOR_PROTOCOL_3,
     DEFAULT_LISTEN_ADDRESS, DEFAULT_MAX_CONNECTIONS, DEFAULT_MAX_SERVER_COMPLETIONS, DEFAULT_PORT,
-    PKG_VERSION,
+    PKG_NAME, PKG_VERSION,
 };
 
 pub(in crate::skk) struct Yaskkserv2CommandLine {
@@ -39,39 +39,42 @@ impl Yaskkserv2CommandLine {
         let default_google_max_candidates_length =
             &DEFAULT_GOOGLE_MAX_CANDIDATES_LENGTH.to_string();
         let default_max_server_completions = &DEFAULT_MAX_SERVER_COMPLETIONS.to_string();
-        let mut app = app_from_crate!()
+        let mut app = clap::App::new(PKG_NAME)
+            .version(PKG_VERSION)
+            .author(env!("CARGO_PKG_AUTHORS"))
+            .about(env!("CARGO_PKG_DESCRIPTION"))
             .setting(clap::AppSettings::DeriveDisplayOrder)
             .arg(clap::Arg::from_usage("[dictionary] 'dictionary'")
-                 .validator(|v| Self::dictionary_validator(&v)))
+                 .validator(Self::dictionary_validator))
             .arg(clap::Arg::from_usage(&config_arg))
             .arg(clap::Arg::from_usage("--no-daemonize 'do not daemonize'"))
             .arg(clap::Arg::from_usage("--port=[PORT] 'port number'")
-                 .validator(|v| Self::port_validator(&v))
+                 .validator(Self::port_validator)
                  .default_value(default_port))
             .arg(clap::Arg::from_usage("--max-connections=[MAX-CONNECTIONS] 'max connections'")
-                 .validator(|v| Self::max_connections_validator(&v))
+                 .validator(Self::max_connections_validator)
                  .default_value(default_max_connections))
             .arg(clap::Arg::from_usage("--listen-address=[LISTEN-ADDRESS] 'listen address'")
-                 .validator(|v| Self::listen_address_validator(&v))
+                 .validator(Self::listen_address_validator)
                  .default_value(DEFAULT_LISTEN_ADDRESS))
             .arg(clap::Arg::from_usage("--hostname-and-ip-address-for-protocol-3=[HOSTNAME:ADDR] 'hostname and ip address for protocol 3'")
-                 .validator(|v| Self::hostname_and_ip_address_address_validator(&v))
+                 .validator(Self::hostname_and_ip_address_address_validator)
                  .default_value(DEFAULT_HOSTNAME_AND_IP_ADDRESS_FOR_PROTOCOL_3))
             .arg(clap::Arg::from_usage("--google-timeout-milliseconds=[MILLISECONDS] 'google timeout milliseconds'")
-                 .validator(|v| Self::google_timeout_milliseconds_validator(&v))
+                 .validator(Self::google_timeout_milliseconds_validator)
                  .default_value(default_google_timeout_milliseconds))
             .arg(clap::Arg::from_usage("--google-cache-filename=[FILENAME] 'google cache filename (default: disable)'"))
             .arg(clap::Arg::from_usage("--google-cache-entries=[ENTRIES] 'google cache entries'")
-                 .validator(|v| Self::google_cache_entries_validator(&v))
+                 .validator(Self::google_cache_entries_validator)
                  .default_value(default_google_cache_entries))
             .arg(clap::Arg::from_usage("--google-cache-expire-seconds=[SECONDS] 'google cache expire seconds'")
-                 .validator(|v| Self::google_cache_expire_seconds_validator(&v))
+                 .validator(Self::google_cache_expire_seconds_validator)
                  .default_value(default_google_cache_expire_seconds))
             .arg(clap::Arg::from_usage("--google-max-candidates-length=[LENGTH] 'google max candidates length'")
-                 .validator(|v| Self::google_max_candidates_length_validator(&v))
+                 .validator(Self::google_max_candidates_length_validator)
                  .default_value(default_google_max_candidates_length))
             .arg(clap::Arg::from_usage("--max-server-completions=[MAX] 'max server completions'")
-                 .validator(|v| Self::max_server_completions_validator(&v))
+                 .validator(Self::max_server_completions_validator)
                  .default_value(default_max_server_completions))
             .arg(clap::Arg::from_usage("--google-japanese-input=[TIMING] 'enable google japanese input (default: notfound)'")
                  .possible_values(&["notfound", "disable", "last", "first"]))
@@ -185,7 +188,7 @@ impl Yaskkserv2CommandLine {
 
     fn setup(
         &mut self,
-        matches: &clap::ArgMatches<'_>,
+        matches: &clap::ArgMatches,
         result_is_help_exit: &mut bool,
         result_is_exit: &mut bool,
     ) {

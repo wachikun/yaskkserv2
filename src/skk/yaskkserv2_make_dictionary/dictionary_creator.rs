@@ -1,6 +1,6 @@
 use crate::skk::yaskkserv2_make_dictionary::{
     BlockInformationOffsetLength, Config, Dictionary, DictionaryBlockHeads,
-    DictionaryBlockInformation, DictionaryCreator, DictionaryFixedHeader, Encoding,
+    DictionaryBlockInformation, DictionaryCreator, DictionaryFixedHeader, Digest, Encoding,
     IndexDataHeader, IndexDataHeaderBlockHeader, JisyoReader, OpenOptions, Sha1, SkkError,
     TemporaryBlockMap, ToFromNeBytes, Write, Yaskkserv2MakeDictionary, BLOCK_ALIGNMENT_LENGTH,
     DICTIONARY_BLOCK_UNIT_LENGTH, DICTIONARY_FIXED_HEADER_AREA_LENGTH, DICTIONARY_VERSION,
@@ -429,9 +429,8 @@ impl DictionaryCreator {
         dictionary_fixed_header: &mut DictionaryFixedHeader,
     ) -> Result<(), SkkError> {
         let mut writer = OpenOptions::new().write(true).open(dictionary_full_path)?;
-        dictionary_fixed_header
-            .sha1sum
-            .copy_from_slice(&hasher.digest().bytes());
+        let digest: [u8; 20] = hasher.clone().finalize().as_slice().try_into().unwrap();
+        dictionary_fixed_header.sha1sum.copy_from_slice(&digest);
         writer.write_all(&dictionary_fixed_header.to_ne_bytes())?;
         writer.flush()?;
         Ok(())

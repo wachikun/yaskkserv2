@@ -371,14 +371,14 @@ impl Request {
     }
 
     fn request(url: &str, timeout: u64) -> Result<String, SkkError> {
-        let client = reqwest::Client::builder()
+        let client = reqwest::blocking::Client::builder()
             .timeout(std::time::Duration::from_millis(timeout))
             .build()
             .map_err(|e| {
                 Yaskkserv2::log_error(&format!("reqwest::Client::builder()  error={:?}", e));
                 e
             })?;
-        let mut response = client.get(url).send().map_err(|e| {
+        let response = client.get(url).send().map_err(|e| {
             Yaskkserv2::log_error(&format!("get()  error={:?}", e));
             e
         })?;

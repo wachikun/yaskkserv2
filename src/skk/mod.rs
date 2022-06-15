@@ -31,7 +31,6 @@ macro_rules! define_builder {
 }
 
 const DICTIONARY_FIXED_HEADER_AREA_LENGTH: u32 = 256;
-#[cfg(not(test))]
 const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 const DICTIONARY_VERSION: u32 = 1;

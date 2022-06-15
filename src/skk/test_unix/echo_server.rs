@@ -3,8 +3,8 @@
 //! echo server は Rust 内蔵版と C 版がある。 C 版は gcc でビルドし外部コマンドとして test
 //! する。ビルドに失敗したり echo server バイナリを起動できなかった場合は何もせず成功する。
 
-use mio::tcp::{TcpListener, TcpStream};
-use mio::{Events, Poll, PollOpt, Ready, Token};
+use mio::net::{TcpListener, TcpStream};
+use mio::{Events, Poll, Token};
 use std::io::Read;
 
 use crate::skk::test_unix::{
@@ -131,10 +131,11 @@ fn echo_server_mio_raw_server(
             let sockets_length = sockets.len();
             let mut sockets_some_count = 0;
             let mut next_socket_index = 0;
-            let poll = Poll::new().unwrap();
-            let listener =
-                TcpListener::bind(&format!("127.0.0.1:{}", port).parse().unwrap()).unwrap();
-            poll.register(&listener, LISTENER, Ready::readable(), PollOpt::edge())
+            let mut poll = Poll::new().unwrap();
+            let mut listener =
+                TcpListener::bind(format!("127.0.0.1:{}", port).parse().unwrap()).unwrap();
+            poll.registry()
+                .register(&mut listener, LISTENER, mio::Interest::READABLE)
                 .unwrap();
             let mut events = Events::with_capacity(1024);
             let mut buffer = vec![0; 32 * 1024];
@@ -144,15 +145,11 @@ fn echo_server_mio_raw_server(
                     match event.token() {
                         LISTENER => loop {
                             match listener.accept() {
-                                Ok((socket, _)) => {
+                                Ok((mut socket, _)) => {
                                     let token = Token(next_socket_index);
-                                    poll.register(
-                                        &socket,
-                                        token,
-                                        Ready::readable(),
-                                        PollOpt::edge(),
-                                    )
-                                    .unwrap();
+                                    poll.registry()
+                                        .register(&mut socket, token, mio::Interest::READABLE)
+                                        .unwrap();
                                     sockets[usize::from(token)] = Some(MioSocket::new(socket));
                                     sockets_some_count += 1;
                                     if sockets_some_count < max_connections {
@@ -202,7 +199,9 @@ fn echo_server_mio_raw_server(
                                 }
                             } {}
                             if is_exit {
-                                poll.deregister(socket.buffer_stream.get_mut()).unwrap();
+                                poll.registry()
+                                    .deregister(socket.buffer_stream.get_mut())
+                                    .unwrap();
                                 sockets[usize::from(token)] = None;
                                 sockets_some_count -= 1;
                                 next_socket_index = usize::from(token);

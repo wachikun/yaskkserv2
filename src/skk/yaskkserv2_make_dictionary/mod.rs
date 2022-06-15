@@ -118,7 +118,7 @@ mod jisyo_reader;
 
 pub(in crate::skk) mod command_line;
 
-use sha1::Sha1;
+use sha1::{Digest, Sha1};
 use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Read, Seek, Write};

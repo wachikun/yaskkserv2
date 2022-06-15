@@ -22,8 +22,8 @@ pub(in crate::skk) mod test_unix;
 
 #[cfg(all(not(test), not(unix)))]
 use log::*;
-use mio::tcp::{TcpListener, TcpStream};
-use mio::{Events, Poll, PollOpt, Ready, Token};
+use mio::net::{TcpListener, TcpStream};
+use mio::{Events, Interest, Poll, Token};
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek, Write};
@@ -326,16 +326,17 @@ impl Yaskkserv2 {
         let sockets_length = sockets.len();
         let mut sockets_some_count = 0;
         let mut next_socket_index = 0;
-        let poll = Poll::new()?;
-        let listener = TcpListener::bind(
-            &format!(
+        let mut poll = Poll::new()?;
+        let mut listener = TcpListener::bind(
+            format!(
                 "{}:{}",
                 &self.server.config.listen_address, &self.server.config.port
             )
             .parse()
             .unwrap(),
         )?;
-        poll.register(&listener, LISTENER, Ready::readable(), PollOpt::edge())?;
+        poll.registry()
+            .register(&mut listener, LISTENER, Interest::READABLE)?;
         let mut events = Events::with_capacity(MAX_CONNECTION);
         let mut dictionary_file = DictionaryFile::new(
             File::open(&self.server.config.dictionary_full_path)?,
@@ -355,7 +356,7 @@ impl Yaskkserv2 {
                             &mut next_socket_index,
                             &mut sockets,
                             &mut sockets_some_count,
-                            &poll,
+                            &mut poll,
                             &listener,
                             sockets_length,
                             #[cfg(test)]
@@ -396,13 +397,13 @@ impl Yaskkserv2 {
         next_socket_index: &mut usize,
         sockets: &mut [Option<MioSocket>],
         sockets_some_count: &mut usize,
-        poll: &Poll,
+        poll: &mut Poll,
         listener: &TcpListener,
         sockets_length: usize,
         #[cfg(test)] take_index_for_test: &mut usize,
     ) -> Result<RunLoopListenerResult, SkkError> {
         match listener.accept() {
-            Ok((socket, _)) => {
+            Ok((mut socket, _)) => {
                 #[allow(clippy::cast_sign_loss)]
                 if *sockets_some_count >= self.server.config.max_connections as usize {
                     return Ok(RunLoopListenerResult::Break);
@@ -412,7 +413,8 @@ impl Yaskkserv2 {
                     *take_index_for_test += 1;
                 }
                 let token = Token(*next_socket_index);
-                poll.register(&socket, token, Ready::readable(), PollOpt::edge())?;
+                poll.registry()
+                    .register(&mut socket, token, Interest::READABLE)?;
                 sockets[usize::from(token)] = Some(MioSocket::new(socket));
                 *sockets_some_count += 1;
                 #[allow(clippy::cast_sign_loss)]
@@ -456,7 +458,7 @@ impl Yaskkserv2 {
         match self.read_until_skk_server(socket, buffer, dictionary_file, &mut is_shutdown) {
             HandleClientResult::Continue => {}
             HandleClientResult::Exit => {
-                poll.deregister(socket.buffer_stream.get_mut())?;
+                poll.registry().deregister(socket.buffer_stream.get_mut())?;
                 if is_shutdown {
                     if let Err(e) = &socket.buffer_stream.get_mut().shutdown(Shutdown::Both) {
                         Self::log_error(&format!("shutdown error={}", e));

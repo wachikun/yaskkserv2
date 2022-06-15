@@ -1,4 +1,4 @@
-use sha1::Sha1;
+use sha1::{Digest, Sha1};
 use std::fs::File;
 use std::io::{Read, Write};
 
@@ -92,7 +92,8 @@ impl GoogleCache {
         if buffer.len() >= rough_empty_buffer_length {
             let mut hasher = Sha1::new();
             hasher.update(&buffer[SHA1SUM_LENGTH..]);
-            if hasher.digest().bytes() == buffer[..SHA1SUM_LENGTH] {
+            let digest: [u8; SHA1SUM_LENGTH] = hasher.finalize().as_slice().try_into().unwrap();
+            if digest == buffer[..SHA1SUM_LENGTH] {
                 return Self::deserialize(&buffer[SHA1SUM_LENGTH..]);
             }
         }
@@ -119,7 +120,8 @@ impl GoogleCache {
         let serialized_map = Self::serialize(map)?;
         let mut hasher = Sha1::new();
         hasher.update(&serialized_map);
-        file.write_all(&hasher.digest().bytes())?;
+        let digest: [u8; SHA1SUM_LENGTH] = hasher.finalize().as_slice().try_into().unwrap();
+        file.write_all(&digest)?;
         file.write_all(&serialized_map)?;
         Ok(())
     }
