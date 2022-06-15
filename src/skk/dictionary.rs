@@ -1,4 +1,4 @@
-use sha1::Sha1;
+use sha1::{Digest, Sha1};
 use std::fs::File;
 use std::io::{Read, Seek};
 
@@ -112,7 +112,8 @@ impl Dictionary {
             hasher.update(&buffer[..(read_length as usize)]);
             total_scan_length += read_length;
         }
-        if *sha1sum != hasher.digest().bytes() {
+        let digest: [u8; 20] = hasher.clone().finalize().as_slice().try_into().unwrap();
+        if *sha1sum != digest {
             return Err(SkkError::BrokenDictionary);
         }
         Ok(())

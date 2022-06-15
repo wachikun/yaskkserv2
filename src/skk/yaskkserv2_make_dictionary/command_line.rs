@@ -1,6 +1,6 @@
 use rustc_hash::FxHashSet;
 
-use crate::skk::{Config, Encoding, SkkError};
+use crate::skk::{Config, Encoding, SkkError, PKG_NAME, PKG_VERSION};
 
 #[derive(Default)]
 pub(in crate::skk) struct Yaskkserv2MakeDictionaryCommandLine {
@@ -37,11 +37,14 @@ impl Yaskkserv2MakeDictionaryCommandLine {
     pub(in crate::skk) fn start(&mut self) -> Result<bool, SkkError> {
         let mut result_is_help_exit = false;
         let result_is_exit = false;
-        let mut app = app_from_crate!()
+        let mut app = clap::App::new(PKG_NAME)
+            .version(PKG_VERSION)
+            .author(env!("CARGO_PKG_AUTHORS"))
+            .about(env!("CARGO_PKG_DESCRIPTION"))
             .setting(clap::AppSettings::DeriveDisplayOrder)
             .arg(
                 clap::Arg::from_usage("[jisyo] 'SKK-JISYO (EUC or UTF8)'")
-                    .validator(|v| Self::jisyo_validator(&v))
+                    .validator(Self::jisyo_validator)
                     .multiple(true),
             )
             .arg(clap::Arg::from_usage(
@@ -102,7 +105,7 @@ impl Yaskkserv2MakeDictionaryCommandLine {
     }
 
     // ファイルの実体が同一かどうかは見ていないことに注意
-    fn is_unique_jisyo_args(matches: &clap::ArgMatches<'_>) -> bool {
+    fn is_unique_jisyo_args(matches: &clap::ArgMatches) -> bool {
         if let Some(s) = matches.values_of("jisyo") {
             let hash_set: FxHashSet<&str> = s.clone().collect::<FxHashSet<&str>>();
             return s.len() == hash_set.len();

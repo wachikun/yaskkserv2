@@ -1,5 +1,5 @@
 use rand::Rng;
-use sha1::Sha1;
+use sha1::{Digest, Sha1};
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
 
@@ -56,11 +56,11 @@ impl Jisyo {
         let mut reader = File::open(&jisyo_full_path).unwrap();
         reader.read_to_end(&mut buffer).unwrap();
         hasher.update(&buffer);
-        let hash = hasher.digest().bytes();
+        let digest: [u8; 20] = hasher.finalize().as_slice().try_into().unwrap();
         if let Some(jisyo_hash) = *jisyo_hash {
-            assert_eq!(hash, jisyo_hash);
+            assert_eq!(digest, jisyo_hash);
         }
-        hash
+        digest
     }
 
     fn compare_and_create_dictionary(
