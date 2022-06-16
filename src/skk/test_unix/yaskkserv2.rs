@@ -174,7 +174,7 @@ fn test_dictionary_notfound_google_found(name: &str, port: &str, is_google_sugge
                             String::from_utf8(buffer.clone())
                         );
                     } else {
-                        println!("size={}  buffer={:x?}", size, buffer);
+                        panic!("google input not found");
                     }
                     assert!(buffer[buffer.len() - 1] == b'\n');
                 }
