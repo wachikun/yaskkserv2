@@ -4,6 +4,8 @@ use crate::skk::encoding_simple::{
     EUC_2_TO_UTF8_VEC, EUC_3_TO_UTF8_MAP, UTF8_2_4_TO_EUC_MAP, UTF8_3_TO_EUC_VEC,
 };
 
+use std::fmt::Write as _;
+
 type SetupMapResult = (Vec<[u8; 4]>, Vec<[u8; 3]>);
 
 impl EncodingTable {
@@ -35,57 +37,48 @@ impl EncodingTable {
                     Self::convert_unicode_code_to_utf8_8_bytes(base_unicode, &mut is_combine)?;
                 if is_combine {
                     header_euc_utf8_combine_length += 1;
-                    euc_utf8_combine_table.push_str(&format!(
+                    let _ = write!(
+                        euc_utf8_combine_table,
                         "0x{:>02x},0x{:>02x},0x{:>02x},",
                         euc_3[0], euc_3[1], euc_3[2]
-                    ));
-                    euc_utf8_combine_table.push_str(
-                        &format!("0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},\n",
-                                 utf8_8[0], utf8_8[1], utf8_8[2], utf8_8[3], utf8_8[4], utf8_8[5], utf8_8[6], utf8_8[7]));
+                    );
+                    let _ = writeln!(
+                        euc_utf8_combine_table,
+                        "0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},",
+                        utf8_8[0], utf8_8[1], utf8_8[2], utf8_8[3], utf8_8[4], utf8_8[5], utf8_8[6], utf8_8[7]);
                 } else {
                     header_euc_utf8_length += 1;
-                    euc_utf8_table.push_str(&format!(
+                    let _ = write!(
+                        euc_utf8_table,
                         "0x{:>02x},0x{:>02x},0x{:>02x},",
                         euc_3[0], euc_3[1], euc_3[2]
-                    ));
-                    euc_utf8_table.push_str(&Self::format_4_bytes(&utf8_8, ""));
+                    );
+                    Self::write_4_bytes(&mut euc_utf8_table, &utf8_8, "");
                 }
             }
             line.clear();
         }
         let mut result = String::from("// header\n");
-        result.push_str(&Self::format_4_bytes(
-            &header_version.to_ne_bytes(),
-            "    // version",
-        ));
-        result.push_str(&Self::format_4_bytes(
+        Self::write_4_bytes(&mut result, &header_version.to_ne_bytes(), "    // version");
+        Self::write_4_bytes(
+            &mut result,
             &header_length.to_ne_bytes(),
             "    // header_length",
-        ));
-        result.push_str(&Self::format_4_bytes(
+        );
+        Self::write_4_bytes(
+            &mut result,
             &header_euc_utf8_combine_length.to_ne_bytes(),
             "    // euc_utf8_combine_length",
-        ));
-        result.push_str(&Self::format_4_bytes(
+        );
+        Self::write_4_bytes(
+            &mut result,
             &header_euc_utf8_length.to_ne_bytes(),
             "    // euc_utf8_length",
-        ));
-        result.push_str(&Self::format_4_bytes(
-            &header_reserved[0..4],
-            "    // reserved",
-        ));
-        result.push_str(&Self::format_4_bytes(
-            &header_reserved[4..8],
-            "    // reserved",
-        ));
-        result.push_str(&Self::format_4_bytes(
-            &header_reserved[8..12],
-            "    // reserved",
-        ));
-        result.push_str(&Self::format_4_bytes(
-            &header_reserved[12..16],
-            "    // reserved",
-        ));
+        );
+        Self::write_4_bytes(&mut result, &header_reserved[0..4], "    // reserved");
+        Self::write_4_bytes(&mut result, &header_reserved[4..8], "    // reserved");
+        Self::write_4_bytes(&mut result, &header_reserved[8..12], "    // reserved");
+        Self::write_4_bytes(&mut result, &header_reserved[12..16], "    // reserved");
         result.push_str(&euc_utf8_combine_table);
         result.push_str(&euc_utf8_table);
         Ok(result)
@@ -397,10 +390,11 @@ impl EncodingTable {
         Ok(result)
     }
 
-    fn format_4_bytes(buffer: &[u8], suffix: &str) -> String {
-        format!(
-            "0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},{}\n",
+    fn write_4_bytes(string: &mut String, buffer: &[u8], suffix: &str) {
+        let _ = writeln!(
+            string,
+            "0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},{}",
             buffer[0], buffer[1], buffer[2], buffer[3], suffix
-        )
+        );
     }
 }
