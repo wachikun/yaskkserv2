@@ -440,13 +440,16 @@ impl ConnectSendCompare {
             if !debug_force_exit_directory_full_path.exists() {
                 break;
             }
-            let mut dummy_read_buffer = Vec::new();
-            if let Ok(read_length) = buffer_stream.read(&mut dummy_read_buffer) {
-                if read_length == 0 {
-                    break;
+            #[allow(clippy::read_zero_byte_vec)]
+            {
+                let mut dummy_read_buffer = Vec::new();
+                if let Ok(read_length) = buffer_stream.read(&mut dummy_read_buffer) {
+                    if read_length == 0 {
+                        break;
+                    }
+                } else {
+                    println!("read() error");
                 }
-            } else {
-                println!("read() error");
             }
         }
     }
