@@ -30,7 +30,7 @@ impl Euc {
         loop {
             match euc_buffer[euc_i] {
                 0xa1..=0xfe | 0x8e => {
-                    match Self::decode_a1_fe_8e(
+                    let tmp = Self::decode_a1_fe_8e(
                         is_error_exit,
                         euc_buffer,
                         euc_buffer_length,
@@ -38,7 +38,8 @@ impl Euc {
                         &mut combine_euc_to_utf8_map,
                         &mut result_utf8,
                         &mut euc_i,
-                    ) {
+                    );
+                    match tmp {
                         EucResult::Break => break,
                         EucResult::ErrorExit => return Err(SkkError::Encoding),
                         EucResult::Nop => {}
@@ -49,14 +50,15 @@ impl Euc {
                     euc_i += 1;
                 }
                 0x8f => {
-                    match Self::decode_8f(
+                    let tmp = Self::decode_8f(
                         is_error_exit,
                         euc_buffer,
                         euc_buffer_length,
                         &mut euc_3_to_utf8_map,
                         &mut result_utf8,
                         &mut euc_i,
-                    ) {
+                    );
+                    match tmp {
                         EucResult::Break => break,
                         EucResult::ErrorExit => return Err(SkkError::Encoding),
                         EucResult::Nop => {}
