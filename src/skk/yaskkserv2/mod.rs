@@ -523,12 +523,16 @@ impl Yaskkserv2 {
                 } else {
                     match socket.buffer_stream.get_ref().peer_addr() {
                         Ok(peer_addr) => Self::log_error(&format!(
-                            "read_line() error={}  port={}",
-                            peer_addr, self.server.config.port
+                            "read_until_skk_server() error={}  addr={} port={}",
+                            e.kind(),
+                            peer_addr,
+                            self.server.config.port
                         )),
-                        Err(e) => Self::log_error(&format!(
-                            "peer_address() get failed error={}  port={}",
-                            e, self.server.config.port
+                        Err(peer_addr_error) => Self::log_error(&format!(
+                            "read_until_skk_server() error={}, peer_address() error={}  port={}",
+                            e.kind(),
+                            peer_addr_error.kind(),
+                            self.server.config.port
                         )),
                     };
                     *is_shutdown = true;
