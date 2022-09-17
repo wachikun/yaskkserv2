@@ -1,6 +1,6 @@
 [package]
 name = "yaskkserv2"
-version = "0.1.3"
+version = "0.1.5"
 authors = ["Tadashi Watanabe <twacc2020@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "Yet Another Skkserv 2"
