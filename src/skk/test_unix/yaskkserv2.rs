@@ -305,8 +305,8 @@ impl MaxConnections {
             const TRY_RECV_SLEEP_MILLIS: u128 = 5 * 1000;
             let (tx, rx) = mpsc::channel();
             let mut thread_handles = Vec::new();
-            for u in lifetime_static_table.iter() {
-                thread_handles.push(Self::spawn(&config, &tx, *u, THREAD_SLEEP_MILLIS));
+            for u in lifetime_static_table {
+                thread_handles.push(Self::spawn(&config, &tx, u, THREAD_SLEEP_MILLIS));
             }
             let start_time = std::time::Instant::now();
             let mut receive_count = 0;
