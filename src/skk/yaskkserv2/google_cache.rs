@@ -71,10 +71,8 @@ impl GoogleCache {
         } else {
             return Err(SkkError::CacheOpen);
         };
-        rw_lock_write.map = match Self::read(google_cache_full_path) {
-            Ok(ok) => ok,
-            Err(_) => GoogleCacheBTreeMap::new(),
-        };
+        rw_lock_write.map =
+            Self::read(google_cache_full_path).map_or_else(|_| GoogleCacheBTreeMap::new(), |ok| ok);
         Ok(())
     }
 

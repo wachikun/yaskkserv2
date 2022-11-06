@@ -167,10 +167,9 @@ fn echo_server_mio_raw_server(
                             }
                         },
                         token => {
-                            let socket = match &mut sockets[usize::from(token)] {
-                                Some(socket) => socket,
-                                None => panic!("sockets get failed"),
-                            };
+                            let socket = sockets[usize::from(token)]
+                                .as_mut()
+                                .map_or_else(|| panic!("sockets get failed"), |socket| socket);
                             let mut is_exit = false;
                             while match socket.buffer_stream.read(&mut buffer) {
                                 Ok(0) => {
