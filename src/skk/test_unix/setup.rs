@@ -285,7 +285,7 @@ impl JisyoDownloader {
                 .arg("-C")
                 .arg(Path::get_full_path(""))
                 .arg("-xf")
-                .arg(&archive_full_path)
+                .arg(archive_full_path)
                 .spawn()
                 .unwrap();
             child.wait().unwrap();
@@ -293,7 +293,7 @@ impl JisyoDownloader {
             println!("extract gz full_path={}", archive_full_path);
             let mut child = std::process::Command::new("gzip")
                 .arg("-d")
-                .arg(&archive_full_path)
+                .arg(archive_full_path)
                 .spawn()
                 .unwrap();
             child.wait().unwrap();

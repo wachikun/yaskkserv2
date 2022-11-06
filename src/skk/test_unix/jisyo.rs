@@ -53,7 +53,7 @@ impl Jisyo {
     ) -> [u8; SHA1SUM_LENGTH] {
         let mut hasher = Sha1::new();
         let mut buffer = Vec::new();
-        let mut reader = File::open(&jisyo_full_path).unwrap();
+        let mut reader = File::open(jisyo_full_path).unwrap();
         reader.read_to_end(&mut buffer).unwrap();
         hasher.update(&buffer);
         let digest: [u8; 20] = hasher.finalize().as_slice().try_into().unwrap();
@@ -82,13 +82,13 @@ impl Jisyo {
         {
             let mut buffer: Vec<u8> = vec![0; DICTIONARY_FIXED_HEADER_AREA_LENGTH as usize];
             {
-                let mut reader = File::open(&dictionary_from_test_jisyo_full_path).unwrap();
+                let mut reader = File::open(dictionary_from_test_jisyo_full_path).unwrap();
                 reader.read_exact(&mut buffer).unwrap();
             }
             let dictionary_fixed_header_a: DictionaryFixedHeader =
                 DictionaryFixedHeader::from_ne_bytes(&buffer);
             {
-                let mut reader = File::open(&dictionary_from_compare_jisyo_full_path).unwrap();
+                let mut reader = File::open(dictionary_from_compare_jisyo_full_path).unwrap();
                 reader.read_exact(&mut buffer).unwrap();
             }
             let dictionary_fixed_header_b: DictionaryFixedHeader =

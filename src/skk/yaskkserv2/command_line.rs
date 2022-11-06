@@ -77,7 +77,7 @@ impl Yaskkserv2CommandLine {
                  .validator(Self::max_server_completions_validator)
                  .default_value(default_max_server_completions))
             .arg(clap::Arg::from_usage("--google-japanese-input=[TIMING] 'enable google japanese input (default: notfound)'")
-                 .possible_values(&["notfound", "disable", "last", "first"]))
+                 .possible_values(["notfound", "disable", "last", "first"]))
             .arg(clap::Arg::from_usage("--google-suggest 'enable google suggest'"))
             .arg(clap::Arg::from_usage("--google-use-http 'use http (default: https)'"))
             .arg(clap::Arg::from_usage("--midashi-utf8 'use utf8 (default: euc)'"));
