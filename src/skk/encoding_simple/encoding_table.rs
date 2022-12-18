@@ -393,8 +393,8 @@ impl EncodingTable {
     fn write_4_bytes(string: &mut String, buffer: &[u8], suffix: &str) {
         let _ = writeln!(
             string,
-            "0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},{}",
-            buffer[0], buffer[1], buffer[2], buffer[3], suffix
+            "0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},{suffix}",
+            buffer[0], buffer[1], buffer[2], buffer[3]
         );
     }
 }

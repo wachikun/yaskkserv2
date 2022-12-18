@@ -62,7 +62,7 @@ fn encoding_all_test() {
     setup::setup_and_wait(name);
     let list_full_path = Path::get_full_path("euc-jis-2004-std.txt");
     if !std::path::Path::new(&list_full_path).exists() {
-        println!("{} not found", list_full_path);
+        println!("{list_full_path} not found");
         setup::exit();
         return;
     }

@@ -46,7 +46,7 @@ impl Server {
                     self.handle_client_protocol_1(stream, dictionary_file, buffer);
                 }
             }
-            b'2' => stream.write_all_flush_ignore_error(format!("{} ", PKG_VERSION).as_bytes()),
+            b'2' => stream.write_all_flush_ignore_error(format!("{PKG_VERSION} ").as_bytes()),
             b'3' => stream.write_all_flush_ignore_error(
                 self.config
                     .hostname_and_ip_address_for_protocol_3
@@ -88,7 +88,7 @@ impl Server {
     }
 
     fn send_and_log_protocol_error(stream: &mut TcpStream, protocol: &str, e: &SkkError) {
-        Yaskkserv2::log_error(&format!("protocol {} error={}", protocol, e));
+        Yaskkserv2::log_error(&format!("protocol {protocol} error={e}"));
         let _ignore_error = stream.write_error_flush();
     }
 
@@ -184,24 +184,24 @@ pub(in crate::skk) mod test_unix {
         fn send_split(mut stream: &TcpStream, buffer: &[u8], split: usize) {
             if split < 2 {
                 if let Err(e) = stream.write_all(buffer) {
-                    Yaskkserv2::log_error(&format!("{}", e));
+                    Yaskkserv2::log_error(&format!("{e}"));
                 }
                 if let Err(e) = stream.flush() {
-                    Yaskkserv2::log_error(&format!("{}", e));
+                    Yaskkserv2::log_error(&format!("{e}"));
                 }
             } else {
                 if let Err(e) =
                     stream.write_all(&buffer.iter().take(split).copied().collect::<Vec<u8>>())
                 {
-                    Yaskkserv2::log_error(&format!("{}", e));
+                    Yaskkserv2::log_error(&format!("{e}"));
                 }
                 if let Err(e) =
                     stream.write_all(&buffer.iter().skip(split).copied().collect::<Vec<u8>>())
                 {
-                    Yaskkserv2::log_error(&format!("{}", e));
+                    Yaskkserv2::log_error(&format!("{e}"));
                 }
                 if let Err(e) = stream.flush() {
-                    Yaskkserv2::log_error(&format!("{}", e));
+                    Yaskkserv2::log_error(&format!("{e}"));
                 }
             }
         }
@@ -223,10 +223,10 @@ pub(in crate::skk) mod test_unix {
             if let Err(e) =
                 stream.write_all(&buffer.iter().chain(buffer).copied().collect::<Vec<u8>>())
             {
-                Yaskkserv2::log_error(&format!("{}", e));
+                Yaskkserv2::log_error(&format!("{e}"));
             }
             if let Err(e) = stream.flush() {
-                Yaskkserv2::log_error(&format!("{}", e));
+                Yaskkserv2::log_error(&format!("{e}"));
             }
         }
     }
@@ -264,10 +264,10 @@ pub(in crate::skk) mod test_unix {
 
         fn send_bytes_std_net_tcp(mut stream: &std::net::TcpStream, buffer: &[u8]) {
             if let Err(e) = stream.write_all(buffer) {
-                Yaskkserv2::log_error(&format!("{}", e));
+                Yaskkserv2::log_error(&format!("{e}"));
             }
             if let Err(e) = stream.flush() {
-                Yaskkserv2::log_error(&format!("{}", e));
+                Yaskkserv2::log_error(&format!("{e}"));
             }
         }
 
@@ -288,7 +288,7 @@ pub(in crate::skk) mod test_unix {
                         Self::send_bytes_std_net_tcp(stream, &candidates);
                     }
                 }
-                Err(e) => panic!("error={:?}", e),
+                Err(e) => panic!("error={e:?}"),
             }
         }
     }

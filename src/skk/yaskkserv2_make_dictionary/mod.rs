@@ -184,11 +184,11 @@ impl Yaskkserv2MakeDictionary {
     }
 
     fn print_warning(message: &str) {
-        println!("Warning: {}", message);
+        println!("Warning: {message}");
     }
 
     fn print_error(message: &str) {
-        println!("Error: {}", message);
+        println!("Error: {message}");
     }
 }
 

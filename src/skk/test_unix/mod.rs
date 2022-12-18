@@ -57,11 +57,11 @@ pub(in crate::skk) fn read_jisyo_entries_no_encoding_conversion(
 }
 
 fn wait_server(port: &str) {
-    while if TcpStream::connect(format!("localhost:{}", port)).is_ok() {
-        println!("wait_server connect port={}", port);
+    while if TcpStream::connect(format!("localhost:{port}")).is_ok() {
+        println!("wait_server connect port={port}");
         false
     } else {
-        println!("wait_server wait port={}", port);
+        println!("wait_server wait port={port}");
         std::thread::sleep(std::time::Duration::from_millis(500));
         true
     } {}
@@ -325,7 +325,7 @@ impl ConnectSendCompare {
                         String::from_utf8(midashi.to_vec()).unwrap(),
                         String::from_utf8(buffer.to_vec()).unwrap()
                     );
-                    panic!("midashi={:x?}  u={:x?}", midashi, u);
+                    panic!("midashi={midashi:x?}  u={u:x?}");
                 }
                 assert_eq!(*midashi, u[..midashi.len()]);
             }
@@ -496,7 +496,7 @@ impl ConnectSendCompare {
                 );
             }
             Err(e) => {
-                println!("bin {:#?}", e);
+                println!("bin {e:#?}");
             }
         }
     }
@@ -536,7 +536,7 @@ impl ConnectSendCompare {
                             }
                             Protocol::Echo => self.receive_line_protocol_echo(&buffer, &send),
                         },
-                        Err(e) => panic!("{:#?}", e),
+                        Err(e) => panic!("{e:#?}"),
                     }
                 }
                 if get_midashi_send_candidates_result.cannot_euc_conversion_skip_count > 0 {
@@ -554,7 +554,7 @@ impl ConnectSendCompare {
                     buffer_stream.get_mut().write_disconnect_flush().unwrap();
                 }
             }
-            Err(e) => panic!("{:#?}", e),
+            Err(e) => panic!("{e:#?}"),
         }
     }
 

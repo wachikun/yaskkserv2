@@ -130,21 +130,21 @@ impl MioSocket {
 pub(in crate::skk) trait TcpStreamSkk: Write {
     fn write_all_flush_ignore_error(&mut self, data: &[u8]) {
         if let Err(e) = self.write_all(data) {
-            Yaskkserv2::log_error(&format!("write_all() failed {}", e));
+            Yaskkserv2::log_error(&format!("write_all() failed {e}"));
             return;
         }
         if let Err(e) = self.flush() {
-            Yaskkserv2::log_error(&format!("flush() failed {}", e));
+            Yaskkserv2::log_error(&format!("flush() failed {e}"));
         }
     }
 
     fn write_all_flush(&mut self, data: &[u8]) -> Result<(), std::io::Error> {
         if let Err(e) = self.write_all(data) {
-            Yaskkserv2::log_error(&format!("write_all() failed {}", e));
+            Yaskkserv2::log_error(&format!("write_all() failed {e}"));
             return Err(e);
         }
         if let Err(e) = self.flush() {
-            Yaskkserv2::log_error(&format!("flush() failed {}", e));
+            Yaskkserv2::log_error(&format!("flush() failed {e}"));
             return Err(e);
         }
         Ok(())
@@ -258,13 +258,13 @@ impl Yaskkserv2 {
         ));
         #[cfg(test)]
         if let Err(e) = self.run_loop(0) {
-            let message = format!("run_loop() failed {}", e);
+            let message = format!("run_loop() failed {e}");
             Self::log_error(&message);
             Self::print_warning(&message);
         }
         #[cfg(not(test))]
         if let Err(e) = self.run_loop() {
-            let message = format!("run_loop() failed {}", e);
+            let message = format!("run_loop() failed {e}");
             Self::log_error(&message);
             Self::print_warning(&message);
         }
@@ -345,7 +345,7 @@ impl Yaskkserv2 {
         let mut buffer: Vec<u8> = Vec::new();
         loop {
             if let Err(e) = poll.poll(&mut events, None) {
-                let message = &format!("poll failed {}", e);
+                let message = &format!("poll failed {e}");
                 Self::log_error(message);
                 Self::print_warning(message);
             }
@@ -461,7 +461,7 @@ impl Yaskkserv2 {
                 poll.registry().deregister(socket.buffer_stream.get_mut())?;
                 if is_shutdown {
                     if let Err(e) = &socket.buffer_stream.get_mut().shutdown(Shutdown::Both) {
-                        Self::log_error(&format!("shutdown error={}", e));
+                        Self::log_error(&format!("shutdown error={e}"));
                     }
                 }
                 sockets[usize::from(token)] = None;
@@ -543,20 +543,23 @@ impl Yaskkserv2 {
     }
 
     const fn get_buffer_skip_count(buffer: &[u8], size: usize) -> usize {
+        const SKIP_ZERO_INDEX: usize = 0;
+        const SKIP_CR_OR_LF_INDEX: usize = 1;
+        const SKIP_CR_AND_LF_INDEX: usize = 2;
         if size >= 2
             && (buffer[1] == b'\n' || buffer[1] == b'\r')
             && (buffer[0] == b'\n' || buffer[0] == b'\r')
         {
-            2
+            SKIP_CR_AND_LF_INDEX
         } else if size >= 1 && (buffer[0] == b'\n' || buffer[0] == b'\r') {
-            1
+            SKIP_CR_OR_LF_INDEX
         } else {
-            0
+            SKIP_ZERO_INDEX
         }
     }
 
     fn print_warning(message: &str) {
-        println!("Warning: {}", message);
+        println!("Warning: {message}");
     }
 
     #[cfg(all(not(test), unix))]
@@ -572,13 +575,13 @@ impl Yaskkserv2 {
 
     #[cfg(test)]
     fn log_error(message: &str) {
-        println!("Error: {}", message);
+        println!("Error: {message}");
     }
 
     #[cfg(all(not(test), unix))]
     fn log_error(message: &str) {
         match syslog::unix(Self::get_log_formatter()) {
-            Err(e) => println!("impossible to connect to syslog: {:?}", e),
+            Err(e) => println!("impossible to connect to syslog: {e:?}"),
             Ok(mut writer) => {
                 writer.err(message).expect("could not write error message");
             }
@@ -592,13 +595,13 @@ impl Yaskkserv2 {
 
     #[cfg(test)]
     fn log_info(message: &str) {
-        println!("Info: {}", message);
+        println!("Info: {message}");
     }
 
     #[cfg(all(not(test), unix))]
     fn log_info(message: &str) {
         match syslog::unix(Self::get_log_formatter()) {
-            Err(e) => println!("impossible to connect to syslog: {:?}", e),
+            Err(e) => println!("impossible to connect to syslog: {e:?}"),
             Ok(mut writer) => {
                 writer.info(message).expect("could not send message");
             }
@@ -630,7 +633,7 @@ struct GoogleCacheObject {
 }
 
 impl GoogleCacheObject {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             map: BTreeMap::new(),
         }

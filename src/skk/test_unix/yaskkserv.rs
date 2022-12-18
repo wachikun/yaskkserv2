@@ -42,14 +42,14 @@ fn yaskkserv_core(
     child.wait().unwrap();
     let child = match std::process::Command::new("yaskkserv")
         .arg("--no-daemonize")
-        .arg(format!("--port={}", port))
-        .arg(format!("--max-connection={}", threads))
+        .arg(format!("--port={port}"))
+        .arg(format!("--max-connection={threads}"))
         .arg(yaskkserv_dictionary_full_path)
         .spawn()
     {
         Ok(ok) => ok,
         Err(e) => {
-            println!("Error(test success): yaskkserv  error={:?}", e);
+            println!("Error(test success): yaskkserv  error={e:?}");
             return;
         }
     };

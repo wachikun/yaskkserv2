@@ -76,10 +76,10 @@ fn echo_server_std_net_tcp_raw_server(
     std::thread::Builder::new()
         .name(String::from(std::thread::current().name().unwrap()))
         .spawn(move || {
-            let listener = match std::net::TcpListener::bind(format!("localhost:{}", port)) {
+            let listener = match std::net::TcpListener::bind(format!("localhost:{port}")) {
                 Ok(ok) => ok,
                 Err(e) => {
-                    println!("bind failed  error={:?}", e);
+                    println!("bind failed  error={e:?}");
                     return;
                 }
             };
@@ -99,13 +99,13 @@ fn echo_server_std_net_tcp_raw_server(
                                             // FIXME! 厳密にはこの判定は正しくないが test echo server なので許容する
                                             size != 1 || buffer[0] != b'0'
                                         }
-                                        Err(e) => panic!("{:#?}", e),
+                                        Err(e) => panic!("{e:#?}"),
                                     } {}
                                 })
                                 .unwrap(),
                         );
                     }
-                    Err(e) => panic!("{:#?}", e),
+                    Err(e) => panic!("{e:#?}"),
                 }
             }
             for handle in thread_handles {
@@ -133,7 +133,7 @@ fn echo_server_mio_raw_server(
             let mut next_socket_index = 0;
             let mut poll = Poll::new().unwrap();
             let mut listener =
-                TcpListener::bind(format!("127.0.0.1:{}", port).parse().unwrap()).unwrap();
+                TcpListener::bind(format!("127.0.0.1:{port}").parse().unwrap()).unwrap();
             poll.registry()
                 .register(&mut listener, LISTENER, mio::Interest::READABLE)
                 .unwrap();
@@ -163,7 +163,7 @@ fn echo_server_mio_raw_server(
                                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                                     break;
                                 }
-                                Err(e) => panic!("e={:?}", e),
+                                Err(e) => panic!("e={e:?}"),
                             }
                         },
                         token => {
@@ -193,7 +193,7 @@ fn echo_server_mio_raw_server(
                                     if e.kind() == std::io::ErrorKind::WouldBlock {
                                         false
                                     } else {
-                                        panic!("read panic {:#?}", e);
+                                        panic!("read panic {e:#?}");
                                     }
                                 }
                             } {}
@@ -226,7 +226,7 @@ fn echo_server_c_server(
     {
         Ok(ok) => ok,
         Err(e) => {
-            println!("Error(test success): echo_server  error={:?}", e);
+            println!("Error(test success): echo_server  error={e:?}");
             return;
         }
     };

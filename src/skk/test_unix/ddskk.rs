@@ -30,7 +30,7 @@ impl DaredevilSkk {
     }
 
     fn run_elisp(identifier: &str, elisp_str: &str) -> Result<(), std::io::Error> {
-        let elisp_full_path = Path::get_full_path(&format!("elisp.{}.tmp.el", identifier));
+        let elisp_full_path = Path::get_full_path(&format!("elisp.{identifier}.tmp.el"));
         let mut writer = OpenOptions::new()
             .create(true)
             .truncate(true)
@@ -56,7 +56,7 @@ impl DaredevilSkk {
             let mut child = match std::process::Command::new("emacs").arg("--version").spawn() {
                 Ok(ok) => ok,
                 Err(e) => {
-                    println!("Error(test success): emacs  error={:?}", e);
+                    println!("Error(test success): emacs  error={e:?}");
                     return;
                 }
             };
@@ -83,7 +83,7 @@ impl DaredevilSkk {
 #[test]
 fn ddskk_server_version_test() {
     let name = "ddskk_server_version_test";
-    println!("wait lock {}", name);
+    println!("wait lock {name}");
     let _test_lock = TEST_MUTEX_LOCK.lock();
     setup::setup_and_wait(name);
     let config = Config::new().port(String::from("13000"));
@@ -110,7 +110,7 @@ fn ddskk_server_version_test() {
 #[test]
 fn ddskk_euc_test() {
     let name = "ddskk_euc_test";
-    println!("wait lock {}", name);
+    println!("wait lock {name}");
     let _test_lock = TEST_MUTEX_LOCK.lock();
     setup::setup_and_wait(name);
     let config = Config::new()
@@ -142,7 +142,7 @@ fn ddskk_euc_test() {
 #[test]
 fn ddskk_utf8_test() {
     let name = "ddskk_utf8_test";
-    println!("wait lock {}", name);
+    println!("wait lock {name}");
     let _test_lock = TEST_MUTEX_LOCK.lock();
     setup::setup_and_wait(name);
     let config = Config::new()
@@ -184,7 +184,7 @@ fn ddskk_utf8_test() {
 #[test]
 fn ddskk_skk_jisyo_test() {
     let name = "ddskk_skk_jisyo";
-    println!("wait lock {}", name);
+    println!("wait lock {name}");
     let _test_lock = TEST_MUTEX_LOCK.lock();
     setup::setup_and_wait(name);
     let config = Config::new()
@@ -211,7 +211,7 @@ fn ddskk_skk_jisyo_test() {
 (skk-mode)
 (setq skk-server-report-response nil)
 (with-temp-buffer
-  (insert-file-contents "{}")
+  (insert-file-contents "{jisyo_full_path}")
   (goto-char (point-min))
   (let ((count 0))
     (catch 'loop
@@ -231,7 +231,7 @@ fn ddskk_skk_jisyo_test() {
 	  (forward-line 1))))))
 (skk-disconnect-server)
 "#,
-            config.port, jisyo_full_path
+            config.port
         ),
     );
     setup::exit();
