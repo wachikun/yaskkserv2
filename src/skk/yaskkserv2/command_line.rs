@@ -98,7 +98,7 @@ impl Yaskkserv2CommandLine {
         if std::path::Path::new(value).exists() {
             Ok(())
         } else {
-            Err(format!(r#"dictionary "{}" not found"#, value))
+            Err(format!(r#"dictionary "{value}" not found"#))
         }
     }
 
@@ -196,7 +196,7 @@ impl Yaskkserv2CommandLine {
             self.config.dictionary_full_path = String::from(dictionary_full_path);
         }
         if matches.is_present("version") {
-            println!("{}", PKG_VERSION);
+            println!("{PKG_VERSION}");
             *result_is_exit = true;
         }
         if let Some(full_path) = matches.value_of("config-filename") {

@@ -24,7 +24,7 @@ impl Yaskkserv2Debug for Yaskkserv2 {
         )) {
             Ok(ok) => ok,
             Err(e) => {
-                let message = format!("bind failed {}", e);
+                let message = format!("bind failed {e}");
                 Self::log_error(&message);
                 Self::print_warning(&message);
                 return;
@@ -66,20 +66,20 @@ impl Yaskkserv2Debug for Yaskkserv2 {
                     } else {
                         match buffer_stream.get_ref().peer_addr() {
                             Ok(peer_addr) => {
-                                Self::log_error(&format!("read_line() error={}", peer_addr));
+                                Self::log_error(&format!("read_line() error={peer_addr}"));
                             }
                             Err(e) => {
-                                Self::log_error(&format!("peer_address() get failed error={}", e));
+                                Self::log_error(&format!("peer_address() get failed error={e}"));
                             }
                         };
                         if let Err(e) = buffer_stream.get_mut().shutdown(Shutdown::Both) {
-                            Self::log_error(&format!("shutdown error={}", e));
+                            Self::log_error(&format!("shutdown error={e}"));
                         }
                         false
                     } {}
                 }
                 Err(e) => {
-                    Self::log_error(&format!("{}", e));
+                    Self::log_error(&format!("{e}"));
                 }
             }
         }
@@ -102,9 +102,9 @@ fn setup_google_cache() -> Arc<RwLock<Server>> {
 #[test]
 fn yaskkserv2_google_cache_mutex_read_write_compare_test() {
     let name = "yaskkserv2_google_cache_mutex_read_write_compare";
-    println!("wait lock {}", name);
+    println!("wait lock {name}");
     let _many_thread_lock = MANY_THREAD_MUTEX_LOCK.lock();
-    println!("start {}", name);
+    println!("start {name}");
     let mutex = Arc::new(Mutex::new(()));
     let core = setup_google_cache();
     for _ in 0..1 {
@@ -130,7 +130,7 @@ fn yaskkserv2_google_cache_mutex_read_write_compare_test() {
                                 ];
                             let config = &core.read().unwrap().config;
                             GoogleCache::write_candidates(
-                                format!("{}", midashi).as_bytes(),
+                                format!("{midashi}").as_bytes(),
                                 &candidates,
                                 &config.google_cache_full_path,
                                 config.google_cache_entries,
@@ -138,7 +138,7 @@ fn yaskkserv2_google_cache_mutex_read_write_compare_test() {
                             )
                             .unwrap();
                             let get_candidates =
-                                GoogleCache::get_candidates(format!("{}", midashi).as_bytes());
+                                GoogleCache::get_candidates(format!("{midashi}").as_bytes());
                             assert_eq!(get_candidates, candidates);
                         }
                     })
@@ -154,9 +154,9 @@ fn yaskkserv2_google_cache_mutex_read_write_compare_test() {
 #[test]
 fn yaskkserv2_google_cache_multithread_read_write_test() {
     let name = "yaskkserv2_google_cache_multithread_read_write";
-    println!("wait lock {}", name);
+    println!("wait lock {name}");
     let _many_thread_lock = MANY_THREAD_MUTEX_LOCK.lock();
-    println!("start {}", name);
+    println!("start {name}");
     let core = setup_google_cache();
     for _ in 0..1 {
         let mut join_handles = Vec::new();
@@ -179,14 +179,14 @@ fn yaskkserv2_google_cache_multithread_read_write_test() {
                                 ];
                             let config = &core.read().unwrap().config;
                             GoogleCache::write_candidates(
-                                format!("{}", midashi).as_bytes(),
+                                format!("{midashi}").as_bytes(),
                                 &candidates,
                                 &config.google_cache_full_path,
                                 config.google_cache_entries,
                                 config.google_cache_expire_seconds,
                             )
                             .unwrap();
-                            GoogleCache::get_candidates(format!("{}", midashi).as_bytes());
+                            GoogleCache::get_candidates(format!("{midashi}").as_bytes());
                         }
                     })
                     .unwrap(),

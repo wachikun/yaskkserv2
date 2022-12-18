@@ -118,12 +118,12 @@ fn test_abbrev(port: &str, encoding: Encoding, midashi_encoding: Encoding) {
                             );
                         }
                     }
-                    Err(e) => panic!("error e={}", e),
+                    Err(e) => panic!("error e={e}"),
                 }
             }
             buffer_stream.get_mut().write_all_flush(b"0").unwrap();
         }
-        Err(e) => panic!("error e={}", e),
+        Err(e) => panic!("error e={e}"),
     }
     thread_handle.join().unwrap();
 }
@@ -146,7 +146,7 @@ fn test_dictionary_notfound_google_found(name: &str, port: &str, is_google_sugge
         .is_google_suggest_enabled(is_google_suggest_enabled);
     let threads = 1;
     let thread_handle = run_and_wait_simple_server(&config, get_take_count(threads));
-    match TcpStream::connect(format!("localhost:{}", port)) {
+    match TcpStream::connect(format!("localhost:{port}")) {
         Ok(stream) => {
             let mut buffer_stream = BufReader::new(&stream);
             // test 実装時、「なすがまま」は dictionary に存在せず google API では返ってくる
@@ -178,11 +178,11 @@ fn test_dictionary_notfound_google_found(name: &str, port: &str, is_google_sugge
                     }
                     assert!(buffer[buffer.len() - 1] == b'\n');
                 }
-                Err(e) => panic!("error e={}", e),
+                Err(e) => panic!("error e={e}"),
             }
             buffer_stream.get_mut().write_all_flush(b"0").unwrap();
         }
-        Err(e) => panic!("error e={}", e),
+        Err(e) => panic!("error e={e}"),
     }
     thread_handle.join().unwrap();
     setup::exit();
@@ -491,7 +491,7 @@ impl TestConnections {
         let thread_handle = run_and_wait_simple_server(&config, get_take_count(max_connections));
         let mut thread_handles = Vec::new();
         loop {
-            if thread_handles.len() < max_connections as usize {
+            if thread_handles.len() < max_connections {
                 thread_handles.push(Self::spawn(&config));
             } else {
                 break;

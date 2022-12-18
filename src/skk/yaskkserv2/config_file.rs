@@ -44,7 +44,7 @@ impl Yaskkserv2ConfigFile {
             }
         }
         if let Err(e) = self.validate_and_set_config(&candidates) {
-            println!("{}", e);
+            println!("{e}");
             return Err(SkkError::CommandLine);
         }
         Ok(())

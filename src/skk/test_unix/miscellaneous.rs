@@ -84,14 +84,14 @@ fn detect_encoding_test() {
         let mut reader = File::open(full_path).unwrap();
         let (encoding, _encoding_options) =
             JisyoReader::detect_jisyo_encoding(&mut reader).unwrap();
-        println!("euc {} {:?}", full_path, encoding);
+        println!("euc {full_path} {encoding:?}");
         assert_eq!(encoding, Encoding::Euc);
     }
     for full_path in &setup::JisyoDownloader::get_jisyo_full_paths(Encoding::Utf8) {
         let mut reader = File::open(full_path).unwrap();
         let (encoding, _encoding_options) =
             JisyoReader::detect_jisyo_encoding(&mut reader).unwrap();
-        println!("utf8 {} {:?}", full_path, encoding);
+        println!("utf8 {full_path} {encoding:?}");
         assert!(encoding == Encoding::Utf8);
     }
     setup::exit();

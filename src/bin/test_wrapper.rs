@@ -41,7 +41,7 @@ fn run_cargo(test_name: &str, total_map: &mut BTreeMap<String, Vec<usize>>) {
                     .push(unit);
             }
         }
-        println!("{}", line);
+        println!("{line}");
     }
     process.wait().unwrap();
 }
@@ -61,12 +61,12 @@ fn print_total_map(total_map: &BTreeMap<String, Vec<usize>>) {
             } else {
                 Vec::new()
             };
-            println!("{}", key);
-            println!("        vec={:?}", vec);
+            println!("{key}");
+            println!("        vec={vec:?}");
             println!("         median {}", vec[vec.len() / 2]);
             println!("        average {}", vec.iter().sum::<usize>() / vec.len());
             if is_show_chomped_vec {
-                println!("chomped_vec={:?}", chomped_vec);
+                println!("chomped_vec={chomped_vec:?}");
                 println!(
                     "chomped average {}",
                     chomped_vec.iter().sum::<usize>() / chomped_vec.len()
@@ -92,7 +92,7 @@ fn main() {
                 loop_count = count;
             }
             test_name = std::env::args().nth(2).unwrap();
-            println!("test_name={}", test_name);
+            println!("test_name={test_name}");
         }
         1 => {}
         _ => {
@@ -100,7 +100,7 @@ fn main() {
         }
     }
     for i in 1..=loop_count {
-        println!("loop = {:>3}/{:>3}", i, loop_count);
+        println!("loop = {i:>3}/{loop_count:>3}");
         run_cargo(&test_name, &mut total_map);
         print_total_map(&total_map);
     }

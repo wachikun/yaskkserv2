@@ -37,13 +37,19 @@ impl Candidates {
     /// `trim_matches(b'/')` とは異なり、連続した `b'/'` が存在しても刈り取られるのは先端と終端の
     /// 1 つだけであることに注意。
     pub(in crate::skk) fn trim_one_slash(source: &[u8]) -> &[u8] {
+        const SKIP_ZERO_INDEX: usize = 0;
+        const SKIP_SLASH_INDEX: usize = 1;
         let mut end = source.len();
         if end > 1 && source[end - 1] == b'/' {
             end -= 1;
         } else if end == 0 {
             return source;
         }
-        let start = if source[0] == b'/' { 1 } else { 0 };
+        let start = if source[0] == b'/' {
+            SKIP_SLASH_INDEX
+        } else {
+            SKIP_ZERO_INDEX
+        };
         &source[start..end]
     }
 

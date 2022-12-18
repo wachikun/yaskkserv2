@@ -3,6 +3,6 @@
 
 fn main() {
     if let Err(e) = yaskkserv2::skk::run_yaskkserv2() {
-        println!("Error: {}", e);
+        println!("Error: {e}");
     }
 }

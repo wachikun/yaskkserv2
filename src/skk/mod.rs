@@ -188,7 +188,7 @@ impl Default for Encoding {
 
 impl std::fmt::Display for Encoding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -209,7 +209,7 @@ impl Encoding {
         match value {
             0 => Self::Euc,
             1 => Self::Utf8,
-            _ => panic!("unknown value={}", value),
+            _ => panic!("unknown value={value}"),
         }
     }
 }
@@ -544,7 +544,7 @@ fn run_yaskkserv2_impl(core: &mut Yaskkserv2, is_no_daemonize: bool) {
         let daemonize = Daemonize::new();
         match daemonize.start() {
             Ok(_) => core.run(),
-            Err(e) => println!("Error: {}", e),
+            Err(e) => println!("Error: {e}"),
         }
     }
 }

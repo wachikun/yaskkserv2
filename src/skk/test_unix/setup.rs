@@ -171,7 +171,7 @@ impl JisyoDownloader {
     }
 
     fn get_extract_flag_directory_full_path(full_path: &str) -> String {
-        format!("{}.extracted", full_path)
+        format!("{full_path}.extracted")
     }
 
     fn is_extracted(full_path: &str) -> bool {
@@ -179,7 +179,7 @@ impl JisyoDownloader {
     }
 
     fn create_extract_flag_directory(full_path: &str) {
-        std::fs::create_dir_all(&Self::get_extract_flag_directory_full_path(full_path)).unwrap();
+        std::fs::create_dir_all(Self::get_extract_flag_directory_full_path(full_path)).unwrap();
     }
 
     fn get_convert_dictionary_flag_directory_full_path() -> String {
@@ -191,7 +191,7 @@ impl JisyoDownloader {
     }
 
     fn create_convert_dictionary_flag_directory() {
-        std::fs::create_dir_all(&Self::get_convert_dictionary_flag_directory_full_path()).unwrap();
+        std::fs::create_dir_all(Self::get_convert_dictionary_flag_directory_full_path()).unwrap();
     }
 
     fn download_simple(download_url: &str) -> String {
@@ -200,9 +200,9 @@ impl JisyoDownloader {
             .map_or_else(|| panic!("url format error"), |m| String::from(&m[1]));
         let full_path = Path::get_full_path(&base_filename);
         if Self::is_extracted(&full_path) {
-            println!("extracted url={}", download_url);
+            println!("extracted url={download_url}");
         } else {
-            println!("download url={}", download_url);
+            println!("download url={download_url}");
             Self::download(download_url, &full_path);
             Self::correct(&full_path);
             Self::create_extract_flag_directory(&full_path);
@@ -230,12 +230,12 @@ impl JisyoDownloader {
             );
         }
         if Self::is_extracted(md5_full_path) {
-            println!("extracted url={}", download_md5_url);
+            println!("extracted url={download_md5_url}");
         } else {
             let download_archive_url = download_md5_url.trim_end_matches(".md5");
-            println!("curl download md5 url={}", download_md5_url);
+            println!("curl download md5 url={download_md5_url}");
             Self::download(download_md5_url, md5_full_path);
-            println!("curl download archive url={}", download_archive_url);
+            println!("curl download archive url={download_archive_url}");
             Self::download(download_archive_url, archive_full_path);
             Self::compare_openssl_md5(md5_full_path);
             Self::extract(archive_full_path);
@@ -280,7 +280,7 @@ impl JisyoDownloader {
     #[allow(clippy::case_sensitive_file_extension_comparisons)]
     fn extract(archive_full_path: &str) {
         if archive_full_path.ends_with(".tar.gz") {
-            println!("extract tar.gz full_path={}", archive_full_path);
+            println!("extract tar.gz full_path={archive_full_path}");
             let mut child = std::process::Command::new("tar")
                 .arg("-C")
                 .arg(Path::get_full_path(""))
@@ -290,7 +290,7 @@ impl JisyoDownloader {
                 .unwrap();
             child.wait().unwrap();
         } else if archive_full_path.ends_with(".gz") {
-            println!("extract gz full_path={}", archive_full_path);
+            println!("extract gz full_path={archive_full_path}");
             let mut child = std::process::Command::new("gzip")
                 .arg("-d")
                 .arg(archive_full_path)
@@ -298,7 +298,7 @@ impl JisyoDownloader {
                 .unwrap();
             child.wait().unwrap();
         } else {
-            panic!("unknown archive full_path={}", archive_full_path);
+            panic!("unknown archive full_path={archive_full_path}");
         }
     }
 
@@ -349,17 +349,17 @@ impl OnceInit {
 
     fn convert_dictionary_and_jisyo(config: &Config, jisyo_full_paths: &[String]) {
         for jisyo_full_path in jisyo_full_paths {
-            println!("    {}", jisyo_full_path);
+            println!("    {jisyo_full_path}");
             {
                 let mut cloned_config = config.clone();
                 cloned_config.encoding = Encoding::Euc;
-                cloned_config.dictionary_full_path = format!("{}.dictionary", jisyo_full_path);
+                cloned_config.dictionary_full_path = format!("{jisyo_full_path}.dictionary");
                 Self::create_dictionary(&cloned_config, &[String::from(jisyo_full_path)]);
             }
             {
                 let mut cloned_config = config.clone();
                 cloned_config.encoding = Encoding::Utf8;
-                cloned_config.dictionary_full_path = format!("{}.dictionary.utf8", jisyo_full_path);
+                cloned_config.dictionary_full_path = format!("{jisyo_full_path}.dictionary.utf8");
                 Self::create_dictionary(&cloned_config, &[String::from(jisyo_full_path)]);
             }
         }
@@ -506,7 +506,7 @@ int main(int argc, char *argv[]) {
         {
             Ok(ok) => ok,
             Err(e) => {
-                println!("Error(test success): gcc/compile  error={:?}", e);
+                println!("Error(test success): gcc/compile  error={e:?}");
                 return;
             }
         };
@@ -532,7 +532,7 @@ int main(int argc, char *argv[]) {
     fn once_init() {
         ONCE_INIT.call_once(|| {
             Self::setup_panic_hook();
-            std::fs::create_dir_all(&Path::get_full_path_test_base()).unwrap();
+            std::fs::create_dir_all(Path::get_full_path_test_base()).unwrap();
             once_init_encoding_table(encoding_simple::EncodingTable::get());
             let jisyo_full_paths = JisyoDownloader::download_and_extract();
             let config = Config::new();
@@ -549,14 +549,14 @@ int main(int argc, char *argv[]) {
 }
 
 pub(in crate::skk) fn setup_and_wait(test_name: &str) {
-    println!("wait setup {}", test_name);
+    println!("wait setup {test_name}");
     let _init_lock = INIT_MUTEX_LOCK.lock().unwrap();
     OnceInit::once_init();
     {
         let mut count = TEST_RUNNING_COUNT.write().unwrap();
         *count += 1;
     }
-    println!("start {}", test_name);
+    println!("start {test_name}");
 }
 
 pub(in crate::skk) fn exit() {

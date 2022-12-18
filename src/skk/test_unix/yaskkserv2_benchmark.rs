@@ -87,7 +87,7 @@ impl Yaskkserv2MakeDictionaryTest {
         let encoding_table = encoding_simple::EncodingTable::get();
         let jisyo_full_path = Path::get_full_path_yaskkserv2_jisyo(jisyo_encoding);
         let dictionary_full_path =
-            &Path::get_full_path(&format!("{}.{}.dictionary", &jisyo_full_path, name));
+            &Path::get_full_path(&format!("{}.{name}.dictionary", &jisyo_full_path));
         let config = Config::new()
             .dictionary_full_path(String::from(dictionary_full_path))
             .encoding(output_encoding);
@@ -101,13 +101,13 @@ impl Yaskkserv2MakeDictionaryTest {
             .unwrap();
         }
         let millis = bench.elapsed().as_millis();
-        println!("{}  total  ms.={}", name, millis);
+        println!("{name}  total  ms.={millis}");
     }
 
     fn create_jisyo(name: &str, jisyo_encoding: Encoding, output_encoding: Encoding) {
         let dictionary_full_path = Path::get_full_path_yaskkserv2_dictionary(jisyo_encoding);
         let jisyo_full_path =
-            &Path::get_full_path(&format!("{}.{}.jisyo", &dictionary_full_path, name));
+            &Path::get_full_path(&format!("{}.{name}.jisyo", &dictionary_full_path));
         let config = Config::new()
             .dictionary_full_path(dictionary_full_path)
             .encoding(output_encoding);
@@ -116,7 +116,7 @@ impl Yaskkserv2MakeDictionaryTest {
             Yaskkserv2MakeDictionary::run_create_jisyo(&config.clone(), jisyo_full_path).unwrap();
         }
         let millis = bench.elapsed().as_millis();
-        println!("{}  total  ms.={}", name, millis);
+        println!("{name}  total  ms.={millis}");
     }
 }
 
@@ -396,13 +396,13 @@ fn yaskkserv2_benchmark_binary_normal_send_sequential_test() {
     let port = "12503";
     let child = match std::process::Command::new("target/release/yaskkserv2")
         .arg("--no-daemonize")
-        .arg(format!("--port={}", port))
+        .arg(format!("--port={port}"))
         .arg(&Path::get_full_path_yaskkserv2_dictionary(Encoding::Utf8))
         .spawn()
     {
         Ok(ok) => ok,
         Err(e) => {
-            println!("Error(test success): yaskkserv2  error={:?}", e);
+            println!("Error(test success): yaskkserv2  error={e:?}");
             return;
         }
     };

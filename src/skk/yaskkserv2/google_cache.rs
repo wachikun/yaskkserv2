@@ -160,7 +160,7 @@ mod test_unix {
     fn cache_read_empty_test() {
         let name = "cache_read_empty_test";
         setup::setup_and_wait(name);
-        let cache_full_path = Path::get_full_path(&format!("{}.cache", name));
+        let cache_full_path = Path::get_full_path(&format!("{name}.cache"));
         GoogleCache::write(&cache_full_path, &GoogleCacheBTreeMap::new()).unwrap();
         let bench = std::time::Instant::now();
         for _ in 0..LOOP {
@@ -177,7 +177,7 @@ mod test_unix {
     fn cache_read_huge_test() {
         let name = "cache_read_huge_test";
         setup::setup_and_wait(name);
-        let cache_full_path = Path::get_full_path(&format!("{}.cache", name));
+        let cache_full_path = Path::get_full_path(&format!("{name}.cache"));
         GoogleCache::write(&cache_full_path, &get_huge_cache_b_tree_map()).unwrap();
         let bench = std::time::Instant::now();
         for _ in 0..LOOP {
@@ -194,7 +194,7 @@ mod test_unix {
     fn cache_write_empty_test() {
         let name = "cache_write_empty_test";
         setup::setup_and_wait(name);
-        let cache_full_path = Path::get_full_path(&format!("{}.cache", name));
+        let cache_full_path = Path::get_full_path(&format!("{name}.cache"));
         let map = GoogleCacheBTreeMap::new();
         let bench = std::time::Instant::now();
         for _ in 0..LOOP {
@@ -211,7 +211,7 @@ mod test_unix {
     fn cache_write_huge_test() {
         let name = "cache_write_huge_test";
         setup::setup_and_wait(name);
-        let cache_full_path = Path::get_full_path(&format!("{}.cache", name));
+        let cache_full_path = Path::get_full_path(&format!("{name}.cache"));
         let map = get_huge_cache_b_tree_map();
         let bench = std::time::Instant::now();
         for _ in 0..LOOP {

@@ -22,7 +22,7 @@ struct Jisyo {
 impl Jisyo {
     fn new(name: &str) -> Self {
         Self {
-            test_jisyo_full_path: Path::get_full_path(&format!("test_jisyo.{}.jisyo", name)),
+            test_jisyo_full_path: Path::get_full_path(&format!("test_jisyo.{name}.jisyo")),
             ..Self::default()
         }
     }
@@ -405,7 +405,7 @@ impl Jisyo {
                     || buffer.len() < JISYO_MINIMUM_LINE_LENGTH
                     || buffer[buffer.len() - 1 - 1] != b'/'
                 {
-                    println!("LINE SKIPPED! {:?}", buffer);
+                    println!("LINE SKIPPED! {buffer:?}");
                 } else {
                     result.push(buffer[..buffer.len() - 1].to_vec());
                 }
@@ -423,7 +423,7 @@ impl EucUtf8OkuriAriNashi {
     fn create_source_jisyo(name: &str, encoding: Encoding, bytes: &[u8]) -> String {
         let encoding_string = encoding.to_string();
         let source_jisyo_full_path =
-            Path::get_full_path(&format!("test_jisyo.{}.{}.jisyo", name, &encoding_string));
+            Path::get_full_path(&format!("test_jisyo.{name}.{}.jisyo", &encoding_string));
         let mut writer = BufWriter::new(
             OpenOptions::new()
                 .create(true)

@@ -325,7 +325,7 @@ impl Request {
                 is_insert_hankaku_katakana_only_candidate,
             )
         } else {
-            Yaskkserv2::log_error(&format!("json error? json={:?}", json));
+            Yaskkserv2::log_error(&format!("json error? json={json:?}"));
             Vec::new()
         };
         if result.is_empty() {
@@ -343,7 +343,7 @@ impl Request {
         let encoded_midashi: String = url::form_urlencoded::byte_serialize(midashi).collect();
         let mut result = Vec::new();
         let content = Self::request(
-            &format!("{}{}{}", protocol, GOOGLE_SUGGEST_URL, encoded_midashi),
+            &format!("{protocol}{GOOGLE_SUGGEST_URL}{encoded_midashi}"),
             timeout,
         )?;
         // FIXME!
@@ -375,18 +375,18 @@ impl Request {
             .timeout(std::time::Duration::from_millis(timeout))
             .build()
             .map_err(|e| {
-                Yaskkserv2::log_error(&format!("reqwest::Client::builder()  error={:?}", e));
+                Yaskkserv2::log_error(&format!("reqwest::Client::builder()  error={e:?}"));
                 e
             })?;
         let response = client.get(url).send().map_err(|e| {
-            Yaskkserv2::log_error(&format!("get()  error={:?}", e));
+            Yaskkserv2::log_error(&format!("get()  error={e:?}"));
             e
         })?;
         let status = response.status();
         if status == reqwest::StatusCode::OK {
             Ok(response.text()?)
         } else {
-            Yaskkserv2::log_error(&format!("status()  error={:?}", status));
+            Yaskkserv2::log_error(&format!("status()  error={status:?}"));
             Err(SkkError::Request)
         }
     }
