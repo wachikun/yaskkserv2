@@ -66,20 +66,19 @@ impl GoogleCache {
     pub(in crate::skk) fn setup_use_rwlock_internally(
         google_cache_full_path: &str,
     ) -> Result<(), SkkError> {
-        let mut rw_lock_write = if let Ok(rw_lock_write) = GOOGLE_CACHE_OBJECT.write() {
-            rw_lock_write
-        } else {
+        {
+            let Ok(mut rw_lock_write) = GOOGLE_CACHE_OBJECT.write() else {
             return Err(SkkError::CacheOpen);
         };
-        rw_lock_write.map =
-            Self::read(google_cache_full_path).map_or_else(|_| GoogleCacheBTreeMap::new(), |ok| ok);
+            rw_lock_write.map = Self::read(google_cache_full_path)
+                .map_or_else(|_| GoogleCacheBTreeMap::new(), |ok| ok);
+        }
         Ok(())
     }
 
     pub(in crate::skk) fn read(cache_full_path: &str) -> Result<GoogleCacheBTreeMap, SkkError> {
-        let mut file = match File::open(cache_full_path) {
-            Ok(f) => f,
-            Err(_) => return Err(SkkError::CacheOpen),
+        let Ok(mut file) = File::open(cache_full_path) else {
+            return Err(SkkError::CacheOpen);
         };
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)?;

@@ -104,10 +104,7 @@ impl DictionaryCreator {
         create_index_data_result: &CreateIndexDataResult,
         encoding_table_length: usize,
     ) {
-        println!(
-            "       encoding_table length = {} bytes",
-            encoding_table_length
-        );
+        println!("       encoding_table length = {encoding_table_length} bytes");
         println!(
             "    index_data_header length = {} bytes",
             create_index_data_result.index_data_header.len()

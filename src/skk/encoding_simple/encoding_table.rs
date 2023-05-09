@@ -37,18 +37,18 @@ impl EncodingTable {
                     Self::convert_unicode_code_to_utf8_8_bytes(base_unicode, &mut is_combine)?;
                 if is_combine {
                     header_euc_utf8_combine_length += 1;
-                    let _ = write!(
+                    _ = write!(
                         euc_utf8_combine_table,
                         "0x{:>02x},0x{:>02x},0x{:>02x},",
                         euc_3[0], euc_3[1], euc_3[2]
                     );
-                    let _ = writeln!(
+                    _ = writeln!(
                         euc_utf8_combine_table,
                         "0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},",
                         utf8_8[0], utf8_8[1], utf8_8[2], utf8_8[3], utf8_8[4], utf8_8[5], utf8_8[6], utf8_8[7]);
                 } else {
                     header_euc_utf8_length += 1;
-                    let _ = write!(
+                    _ = write!(
                         euc_utf8_table,
                         "0x{:>02x},0x{:>02x},0x{:>02x},",
                         euc_3[0], euc_3[1], euc_3[2]
@@ -391,7 +391,7 @@ impl EncodingTable {
     }
 
     fn write_4_bytes(string: &mut String, buffer: &[u8], suffix: &str) {
-        let _ = writeln!(
+        _ = writeln!(
             string,
             "0x{:>02x},0x{:>02x},0x{:>02x},0x{:>02x},{suffix}",
             buffer[0], buffer[1], buffer[2], buffer[3]

@@ -28,8 +28,7 @@ impl Yaskkserv2CommandLine {
         let mut result_is_help_exit = false;
         let mut result_is_exit = false;
         let config_arg = format!(
-            "--config-filename=[FILENAME] 'config filename (default: {})'",
-            DEFAULT_CONFIG_FULL_PATH
+            "--config-filename=[FILENAME] 'config filename (default: {DEFAULT_CONFIG_FULL_PATH})'"
         );
         let default_port = &DEFAULT_PORT.to_string();
         let default_max_connections = &DEFAULT_MAX_CONNECTIONS.to_string();

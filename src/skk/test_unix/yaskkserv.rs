@@ -32,10 +32,7 @@ fn yaskkserv_core(
     {
         Ok(ok) => ok,
         Err(e) => {
-            println!(
-                "Error(test success): yaskkserv_make_dictionary  error={:?}",
-                e
-            );
+            println!("Error(test success): yaskkserv_make_dictionary  error={e:?}");
             return;
         }
     };

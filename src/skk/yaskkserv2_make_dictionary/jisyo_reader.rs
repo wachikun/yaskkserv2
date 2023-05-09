@@ -229,9 +229,7 @@ impl JisyoReader {
             print_skip_warning_and_add_line_number("LINE TOO LONG");
             return true;
         }
-        let space = if let Some(space) = twoway::find_bytes(chomped_line, b" ") {
-            space
-        } else {
+        let Some(space) = twoway::find_bytes(chomped_line, b" ") else {
             print_skip_warning_and_add_line_number("SPACE NOT FOUND");
             return true;
         };
