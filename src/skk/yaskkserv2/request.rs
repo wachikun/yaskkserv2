@@ -102,13 +102,13 @@ impl Request {
         true
     }
 
-    fn should_add_tail_candidates(midashi_tail: &[u8]) -> bool {
+    const fn should_add_tail_candidates(midashi_tail: &[u8]) -> bool {
         let length = midashi_tail.len();
         if length < 1 {
             return false;
         }
         let tail_ascii = midashi_tail[length - 1];
-        !(b'a'..=b'z').contains(&tail_ascii)
+        !tail_ascii.is_ascii_lowercase()
     }
 
     fn should_add(
@@ -309,10 +309,7 @@ impl Request {
     ) -> Result<Vec<Vec<u8>>, SkkError> {
         let encoded_midashi: String = url::form_urlencoded::byte_serialize(midashi).collect();
         let content = Self::request(
-            &format!(
-                "{}{}{}",
-                protocol, GOOGLE_JAPANESE_INPUT_URL, encoded_midashi
-            ),
+            &format!("{protocol}{GOOGLE_JAPANESE_INPUT_URL}{encoded_midashi}"),
             timeout,
         )?;
         let json = json::parse(&content)?;

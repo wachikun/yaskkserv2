@@ -215,16 +215,21 @@ struct GetMidashiSendCandidatesResult {
 }
 
 impl ConnectSendCompare {
-    fn new(name: &str, port: &str, protocol: Protocol) -> Self {
+    fn new(parameter: &ConnectSendCompareRunParameter, thread_index: usize) -> Self {
         Self {
-            name: String::from(name),
-            port: String::from(port),
-            protocol,
-            encoding: Encoding::Utf8,
-            max_server_completions: DEFAULT_MAX_SERVER_COMPLETIONS as usize,
+            name: String::from(&format!("{} tid={:>2}", &parameter.name, thread_index)),
+            port: parameter.port.clone(),
+            protocol: parameter.protocol,
+            encoding: parameter.encoding,
+            max_server_completions: parameter.max_server_completions,
             rng: rand::thread_rng(),
             is_report_rps: true,
             is_compare: true,
+            is_yaskkserv: parameter.is_yaskkserv,
+            is_send_lf: parameter.is_send_lf,
+            is_random_lf_or_crlf: parameter.is_random_lf_or_crlf,
+            is_send_broken_binary: parameter.is_send_broken_binary,
+            is_midashi_utf8: parameter.is_midashi_utf8,
             ..Self::default()
         }
     }
@@ -558,23 +563,10 @@ impl ConnectSendCompare {
         }
     }
 
-    fn copy_parameter(parameter: &ConnectSendCompareRunParameter, connect_send_compare: &mut Self) {
-        connect_send_compare.encoding = parameter.encoding;
-        connect_send_compare.is_yaskkserv = parameter.is_yaskkserv;
-        connect_send_compare.is_compare = parameter.is_compare;
-        connect_send_compare.is_send_lf = parameter.is_send_lf;
-        connect_send_compare.is_random_lf_or_crlf = parameter.is_random_lf_or_crlf;
-        connect_send_compare.is_send_broken_binary = parameter.is_send_broken_binary;
-        connect_send_compare.max_server_completions = parameter.max_server_completions;
-        connect_send_compare.is_midashi_utf8 = parameter.is_midashi_utf8;
-    }
-
     fn run(parameter: ConnectSendCompareRunParameter) {
         let mut thread_end_counter = Arc::new(RwLock::new(0));
         if parameter.threads == 1 {
-            let mut connect_send_compare =
-                Self::new(&parameter.name, &parameter.port, parameter.protocol);
-            Self::copy_parameter(&parameter, &mut connect_send_compare);
+            let mut connect_send_compare = Self::new(&parameter, 0);
             connect_send_compare.connect(
                 &parameter.jisyo_full_path,
                 &mut thread_end_counter,
@@ -592,19 +584,8 @@ impl ConnectSendCompare {
                     std::thread::Builder::new()
                         .name(String::from(std::thread::current().name().unwrap()))
                         .spawn(move || {
-                            let mut connect_send_compare = Self::new(
-                                &format!(
-                                    "{} tid={:>2}",
-                                    &thread_parameter.read().unwrap().name,
-                                    thread_index
-                                ),
-                                &thread_parameter.read().unwrap().port,
-                                thread_parameter.read().unwrap().protocol,
-                            );
-                            Self::copy_parameter(
-                                &thread_parameter.read().unwrap(),
-                                &mut connect_send_compare,
-                            );
+                            let mut connect_send_compare =
+                                Self::new(&thread_parameter.read().unwrap(), thread_index);
                             connect_send_compare.connect(
                                 &thread_parameter.read().unwrap().jisyo_full_path,
                                 &mut thread_end_counter,

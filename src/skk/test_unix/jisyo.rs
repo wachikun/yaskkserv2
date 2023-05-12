@@ -310,8 +310,7 @@ impl Jisyo {
         let skk_jisyo_full_path = Path::get_full_path(jisyo_base_filename);
         let encoding_str = &dictionary_encoding.to_string().to_lowercase();
         let output_dictionary_full_path = Path::get_full_path(&format!(
-            "{}.jisyo_euc_utf8_dictionary_test.dictionary.{}",
-            jisyo_base_filename, encoding_str
+            "{jisyo_base_filename}.jisyo_euc_utf8_dictionary_test.dictionary.{encoding_str}",
         ));
         let config = Config::new()
             .encoding(dictionary_encoding)
@@ -323,8 +322,7 @@ impl Jisyo {
         )
         .unwrap();
         let euc_jisyo_full_path = Path::get_full_path(&format!(
-            "{}.jisyo_euc_utf8_dictionary_test.dictionary.{}.jisyo.euc",
-            jisyo_base_filename, encoding_str,
+            "{jisyo_base_filename}.jisyo_euc_utf8_dictionary_test.dictionary.{encoding_str}.jisyo.euc"
         ));
         {
             let mut config = config.clone();
@@ -332,8 +330,7 @@ impl Jisyo {
             Yaskkserv2MakeDictionary::run_create_jisyo(&config, &euc_jisyo_full_path).unwrap();
         }
         let utf8_jisyo_full_path = Path::get_full_path(&format!(
-            "{}.jisyo_euc_utf8_dictionary_test.dictionary.{}.jisyo.utf8",
-            jisyo_base_filename, encoding_str,
+            "{jisyo_base_filename}.jisyo_euc_utf8_dictionary_test.dictionary.{encoding_str}.jisyo.utf8"
         ));
         {
             let mut config = config;
@@ -438,10 +435,8 @@ impl EucUtf8OkuriAriNashi {
     }
 
     fn compare(encoding_table: &[u8], dictionary_encoding: Encoding, source_jisyo_full_path: &str) {
-        let dictionary_full_path = format!(
-            "{}.{}.dictionary",
-            source_jisyo_full_path, dictionary_encoding
-        );
+        let dictionary_full_path =
+            format!("{source_jisyo_full_path}.{dictionary_encoding}.dictionary");
         let euc_jisyo_full_path = format!("{}.euc.jisyo", &dictionary_full_path);
         let utf8_jisyo_full_path = format!("{}.utf8.jisyo", &dictionary_full_path);
         let config = Config::new()
@@ -476,13 +471,11 @@ impl EucUtf8OkuriAriNashi {
         // 先頭行が異なるので skip(1) していることに注意
         let euc_jisyo_bytes = euc_jisyo_buffer
             .split(|v| *v == b'\n')
-            .into_iter()
             .skip(1)
             .map(&<[u8]>::to_vec)
             .collect::<Vec<Vec<u8>>>();
         let utf8_jisyo_bytes = utf8_jisyo_buffer
             .split(|v| *v == b'\n')
-            .into_iter()
             .skip(1)
             .map(|v| encoding_simple::Euc::encode(v).unwrap())
             .collect::<Vec<Vec<u8>>>();

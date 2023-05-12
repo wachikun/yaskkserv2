@@ -445,14 +445,11 @@ impl Yaskkserv2 {
         #[cfg(test)] take_count_for_test: usize,
     ) -> Result<RunLoopTokenResult, SkkError> {
         #[allow(clippy::get_unwrap)]
-        let socket = match sockets.get_mut(usize::from(token)).unwrap() {
-            Some(socket) => socket,
-            None => {
-                let message = "sockets get failed";
-                Self::log_error(message);
-                Self::print_warning(message);
-                return Ok(RunLoopTokenResult::Return);
-            }
+        let Some(socket) = sockets.get_mut(usize::from(token)).unwrap() else {
+            let message = "sockets get failed";
+            Self::log_error(message);
+            Self::print_warning(message);
+            return Ok(RunLoopTokenResult::Return);
         };
         let mut is_shutdown = false;
         match self.read_until_skk_server(socket, buffer, dictionary_file, &mut is_shutdown) {

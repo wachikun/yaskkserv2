@@ -14,6 +14,7 @@ enum EucResult {
 }
 
 impl Euc {
+    #[allow(clippy::significant_drop_tightening)]
     pub(crate) fn decode(euc_buffer: &[u8]) -> Result<Vec<u8>, SkkError> {
         if euc_buffer.is_empty() {
             return Ok(Vec::new());
@@ -81,6 +82,7 @@ impl Euc {
         Ok(result_utf8)
     }
 
+    #[allow(clippy::significant_drop_tightening)]
     pub(crate) fn encode(utf8_buffer: &[u8]) -> Result<Vec<u8>, SkkError> {
         if utf8_buffer.is_empty() {
             return Ok(Vec::new());
@@ -100,14 +102,17 @@ impl Euc {
                 0xe0..=0xef
                     if Encoder::is_utf8_3_bytes(utf8_buffer, utf8_buffer_length, utf8_i) =>
                 {
-                    if let EucResult::ErrorExit = Self::encode_e0_ef(
-                        is_error_exit,
-                        utf8_buffer,
-                        utf8_buffer_length,
-                        utf8_3_to_euc_vec,
-                        &mut combine_utf8_6_to_euc_map,
-                        &mut result_euc,
-                        &mut utf8_i,
+                    if matches!(
+                        Self::encode_e0_ef(
+                            is_error_exit,
+                            utf8_buffer,
+                            utf8_buffer_length,
+                            utf8_3_to_euc_vec,
+                            &mut combine_utf8_6_to_euc_map,
+                            &mut result_euc,
+                            &mut utf8_i,
+                        ),
+                        EucResult::ErrorExit
                     ) {
                         return Err(SkkError::Encoding);
                     }
@@ -119,14 +124,17 @@ impl Euc {
                 0xc2..=0xdf
                     if Encoder::is_utf8_2_bytes(utf8_buffer, utf8_buffer_length, utf8_i) =>
                 {
-                    if let EucResult::ErrorExit = Self::encode_c2_df(
-                        is_error_exit,
-                        utf8_buffer,
-                        utf8_buffer_length,
-                        &mut utf8_2_4_to_euc_map,
-                        &mut combine_utf8_4_to_euc_map,
-                        &mut result_euc,
-                        &mut utf8_i,
+                    if matches!(
+                        Self::encode_c2_df(
+                            is_error_exit,
+                            utf8_buffer,
+                            utf8_buffer_length,
+                            &mut utf8_2_4_to_euc_map,
+                            &mut combine_utf8_4_to_euc_map,
+                            &mut result_euc,
+                            &mut utf8_i,
+                        ),
+                        EucResult::ErrorExit
                     ) {
                         return Err(SkkError::Encoding);
                     }
@@ -134,12 +142,15 @@ impl Euc {
                 0xf0..=0xf7
                     if Encoder::is_utf8_4_bytes(utf8_buffer, utf8_buffer_length, utf8_i) =>
                 {
-                    if let EucResult::ErrorExit = Self::encode_f0_f7(
-                        is_error_exit,
-                        utf8_buffer,
-                        &mut utf8_2_4_to_euc_map,
-                        &mut result_euc,
-                        &mut utf8_i,
+                    if matches!(
+                        Self::encode_f0_f7(
+                            is_error_exit,
+                            utf8_buffer,
+                            &mut utf8_2_4_to_euc_map,
+                            &mut result_euc,
+                            &mut utf8_i,
+                        ),
+                        EucResult::ErrorExit
                     ) {
                         return Err(SkkError::Encoding);
                     }

@@ -92,10 +92,14 @@ fn setup_google_cache() -> Arc<RwLock<Server>> {
     // cache は google_cache_entries を越えると expire されるので
     // test では大きめに取っておくことに注意
     core.write().unwrap().config.google_cache_entries = 10000 * 16 * 2;
-    core.write().unwrap().config.google_cache_full_path =
-        Path::get_full_path("yaskkserv2.google_cache");
-    GoogleCache::setup_use_rwlock_internally(&core.read().unwrap().config.google_cache_full_path)
+    {
+        core.write().unwrap().config.google_cache_full_path =
+            Path::get_full_path("yaskkserv2.google_cache");
+        GoogleCache::setup_use_rwlock_internally(
+            &core.read().unwrap().config.google_cache_full_path,
+        )
         .unwrap();
+    }
     core
 }
 
