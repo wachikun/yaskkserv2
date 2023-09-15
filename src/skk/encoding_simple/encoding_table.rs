@@ -19,8 +19,8 @@ impl EncodingTable {
         let mut euc_utf8_combine_table =
             String::from("// euc_utf8_combine\n// euc 3 bytes, utf8 4 bytes, utf8 4 bytes\n");
         let mut euc_utf8_table = String::from("// euc_utf8\n// euc 3 bytes, utf8 4 bytes\n");
-        let re_comment = Regex::new(r#"^\s*#"#).unwrap();
-        let re_line = Regex::new(r#"^([^\s]+)\s+([^\s]+)\s+#"#).unwrap();
+        let re_comment = Regex::new(r"^\s*#").unwrap();
+        let re_line = Regex::new(r"^([^\s]+)\s+([^\s]+)\s+#").unwrap();
         let mut line = String::new();
         let mut reader = BufReader::new(File::open(table_full_path)?);
         while reader.read_line(&mut line)? > 0 {
@@ -351,8 +351,8 @@ impl EncodingTable {
         let header_reserved: [u8; 4 * 4] = [0; 4 * 4];
         let mut euc_utf8_combine_table = Vec::new();
         let mut euc_utf8_table = Vec::new();
-        let re_comment = Regex::new(r#"^\s*#"#).unwrap();
-        let re_line = Regex::new(r#"^([^\s]+)\s+([^\s]+)\s+#"#).unwrap();
+        let re_comment = Regex::new(r"^\s*#").unwrap();
+        let re_line = Regex::new(r"^([^\s]+)\s+([^\s]+)\s+#").unwrap();
         let mut line = String::new();
         let mut reader = BufReader::new(File::open(table_full_path)?);
         while reader.read_line(&mut line)? > 0 {

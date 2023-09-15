@@ -197,9 +197,12 @@ impl Euc {
             if combine_euc_to_utf8_map.is_none() {
                 *combine_euc_to_utf8_map = Some(COMBINE_EUC_TO_UTF8_MAP.read().unwrap());
             }
-            let combine_euc_to_utf8_map = combine_euc_to_utf8_map.as_ref().unwrap();
-            if combine_euc_to_utf8_map.contains_key(&array_key_3_in_2) {
-                let v = combine_euc_to_utf8_map[&array_key_3_in_2];
+            if combine_euc_to_utf8_map
+                .as_ref()
+                .unwrap()
+                .contains_key(&array_key_3_in_2)
+            {
+                let v = combine_euc_to_utf8_map.as_ref().unwrap()[&array_key_3_in_2];
                 Decoder::push_to_buffer_utf8(&v[..4], result_utf8);
                 Decoder::push_to_buffer_utf8(&v[4..8], result_utf8);
             } else {
@@ -249,9 +252,8 @@ impl Euc {
         if euc_3_to_utf8_map.is_none() {
             *euc_3_to_utf8_map = Some(EUC_3_TO_UTF8_MAP.read().unwrap());
         }
-        let euc_3_to_utf8_map = euc_3_to_utf8_map.as_ref().unwrap();
-        if euc_3_to_utf8_map.contains_key(key_3) {
-            Decoder::push_to_buffer_utf8(&euc_3_to_utf8_map[key_3], result_utf8);
+        if euc_3_to_utf8_map.as_ref().unwrap().contains_key(key_3) {
+            Decoder::push_to_buffer_utf8(&euc_3_to_utf8_map.as_ref().unwrap()[key_3], result_utf8);
         } else {
             result_utf8.extend_from_slice(
                 format!("&#x{:>02x}{:>02x}{:>02x}", key_3[0], key_3[1], key_3[2]).as_bytes(),
@@ -279,10 +281,14 @@ impl Euc {
             if combine_utf8_6_to_euc_map.is_none() {
                 *combine_utf8_6_to_euc_map = Some(COMBINE_UTF8_6_TO_EUC_MAP.read().unwrap());
             }
-            let tmp_combine_utf8_6_to_euc_map = combine_utf8_6_to_euc_map.as_ref().unwrap();
-            if tmp_combine_utf8_6_to_euc_map.contains_key(&utf8_buffer[*utf8_i..*utf8_i + 6]) {
+            if combine_utf8_6_to_euc_map
+                .as_ref()
+                .unwrap()
+                .contains_key(&utf8_buffer[*utf8_i..*utf8_i + 6])
+            {
                 Encoder::push_to_buffer_euc(
-                    &tmp_combine_utf8_6_to_euc_map[&utf8_buffer[*utf8_i..*utf8_i + 6]],
+                    &combine_utf8_6_to_euc_map.as_ref().unwrap()
+                        [&utf8_buffer[*utf8_i..*utf8_i + 6]],
                     result_euc,
                 );
                 *utf8_i += 3 + 3;
@@ -355,9 +361,11 @@ impl Euc {
             if utf8_2_4_to_euc_map.is_none() {
                 *utf8_2_4_to_euc_map = Some(UTF8_2_4_TO_EUC_MAP.read().unwrap());
             }
-            let utf8_2_4_to_euc_map = utf8_2_4_to_euc_map.as_ref().unwrap();
-            if utf8_2_4_to_euc_map.contains_key(&key) {
-                Encoder::push_to_buffer_euc(&utf8_2_4_to_euc_map[&key], result_euc);
+            if utf8_2_4_to_euc_map.as_ref().unwrap().contains_key(&key) {
+                Encoder::push_to_buffer_euc(
+                    &utf8_2_4_to_euc_map.as_ref().unwrap()[&key],
+                    result_euc,
+                );
             } else {
                 result_euc
                     .extend_from_slice(format!("&#x{:>02x}{:>02x}", key[0], key[1]).as_bytes());
@@ -381,9 +389,8 @@ impl Euc {
         if utf8_2_4_to_euc_map.is_none() {
             *utf8_2_4_to_euc_map = Some(UTF8_2_4_TO_EUC_MAP.read().unwrap());
         }
-        let tmp_utf8_2_4_to_euc_map = utf8_2_4_to_euc_map.as_ref().unwrap();
-        if tmp_utf8_2_4_to_euc_map.contains_key(key) {
-            Encoder::push_to_buffer_euc(&tmp_utf8_2_4_to_euc_map[key], result_euc);
+        if utf8_2_4_to_euc_map.as_ref().unwrap().contains_key(key) {
+            Encoder::push_to_buffer_euc(&utf8_2_4_to_euc_map.as_ref().unwrap()[key], result_euc);
         } else {
             result_euc.extend_from_slice(
                 format!(
