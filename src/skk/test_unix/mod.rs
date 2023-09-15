@@ -474,11 +474,11 @@ impl ConnectSendCompare {
                 let mut buffer_stream = BufReader::new(&stream);
                 for _ in 0..TEST_LOOP {
                     const RANDOM_LENGTH_MAX: usize = 1000;
-                    let random_length = rand::thread_rng().gen_range(1, RANDOM_LENGTH_MAX + 1);
+                    let random_length = rand::thread_rng().gen_range(1..RANDOM_LENGTH_MAX + 1);
                     let mut random_binary_data = Vec::new();
                     for _ in 0..random_length {
                         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                        random_binary_data.push(rand::thread_rng().gen_range(0x00, 0xff + 1) as u8);
+                        random_binary_data.push(rand::thread_rng().gen_range(0x00..0xff + 1) as u8);
                     }
                     random_binary_data = random_binary_data
                         .into_iter()

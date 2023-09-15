@@ -45,7 +45,7 @@ fn encoding_simple_test() {
     let mut random_bytes = Vec::new();
     for _ in 0..20000 {
         #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-        random_bytes.push(rand::thread_rng().gen_range(0, 0x100) as u8);
+        random_bytes.push(rand::thread_rng().gen_range(0..0x100) as u8);
         let _droppable = encoding_simple::Euc::encode(&random_bytes).unwrap();
         let _droppable = encoding_simple::Euc::decode(&random_bytes).unwrap();
     }

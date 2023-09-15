@@ -127,7 +127,7 @@ fn yaskkserv2_google_cache_mutex_read_write_compare_test() {
                                 [
                                     format!(
                                         "candidates{}",
-                                        midashi + rng.gen_range(0, 999_999_999)
+                                        midashi + rng.gen_range(0..999_999_999)
                                     )
                                     .as_bytes()
                                     .to_vec(),
@@ -176,7 +176,7 @@ fn yaskkserv2_google_cache_multithread_read_write_test() {
                                 [
                                     format!(
                                         "candidates{}",
-                                        midashi + rng.gen_range(0, 999_999_999)
+                                        midashi + rng.gen_range(0..999_999_999)
                                     )
                                     .as_bytes()
                                     .to_vec(),
