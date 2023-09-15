@@ -214,7 +214,7 @@ pub(in crate::skk) mod test_unix {
             Self::send_split(
                 stream,
                 buffer,
-                rand::thread_rng().gen_range(1, buffer.len()),
+                rand::thread_rng().gen_range(1..buffer.len()),
             );
         }
 

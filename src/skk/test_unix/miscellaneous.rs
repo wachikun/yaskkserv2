@@ -44,7 +44,7 @@ fn quote_skk_jisyo_random_test() {
         let mut add_count = 0;
         loop {
             #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-            let rand_u8 = rng.gen_range(1, 256) as u8;
+            let rand_u8 = rng.gen_range(1..256) as u8;
             if !quote_set.contains(&rand_u8) {
                 buffer.push(rand_u8);
                 add_count += 1;
@@ -65,7 +65,7 @@ fn quote_skk_jisyo_random_test() {
         let mut buffer = Vec::new();
         let mut add_count = 0;
         loop {
-            let index = rng.gen_range(0, quote_chars.len());
+            let index = rng.gen_range(0..quote_chars.len());
             buffer.push(quote_chars[index]);
             add_count += 1;
             if add_count > buffer_length {
@@ -110,12 +110,12 @@ fn remove_duplicates_test() {
         let mut buffer = vec![b'/'];
         let mut previous_u8 = b'/';
         for _ in 0..BUFFER_LOOP {
-            let next_u8 = if previous_u8 != b'/' && rng.gen_range(0, 10) < 3 {
+            let next_u8 = if previous_u8 != b'/' && rng.gen_range(0..10) < 3 {
                 b'/'
             } else {
                 const PRINTABLE_MIN_CODE: u8 = b' ';
                 const PRINTABLE_MAX_CODE: u8 = b'~';
-                rng.gen_range(PRINTABLE_MIN_CODE, PRINTABLE_MAX_CODE + 1)
+                rng.gen_range(PRINTABLE_MIN_CODE..PRINTABLE_MAX_CODE + 1)
             };
             if previous_u8 == b'/' && next_u8 == b'/' {
                 const SAME_REPLACE_CODE: u8 = b'S';

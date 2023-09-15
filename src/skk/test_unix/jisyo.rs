@@ -239,7 +239,7 @@ impl Jisyo {
             for entry in &jisyo_entries {
                 let mut random_new_line_entry = Vec::new();
                 random_new_line_entry.extend_from_slice(&entry[..entry.len()]);
-                random_new_line_entry.extend_from_slice(match rng.gen_range(0, 3) {
+                random_new_line_entry.extend_from_slice(match rng.gen_range(0..3) {
                     0 => b"\n",
                     1 => b"\r\n",
                     _ => b"\r",
@@ -258,7 +258,7 @@ impl Jisyo {
         for _ in 0..20_000_000 {
             let mut random_new_line_entry = Vec::new();
             random_new_line_entry.extend_from_slice(b"a /a/");
-            random_new_line_entry.extend_from_slice(match rng.gen_range(0, 3) {
+            random_new_line_entry.extend_from_slice(match rng.gen_range(0..3) {
                 0 => b"\n",
                 1 => b"\r\n",
                 _ => b"\r",

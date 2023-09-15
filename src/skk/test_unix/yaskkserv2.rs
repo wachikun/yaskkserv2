@@ -458,11 +458,11 @@ impl TestConnections {
                     TcpStream::connect(format!("localhost:{}", thread_config.port))
                 {
                     let mut buffer = vec![0; 8 * 1024];
-                    let loop_times = rand::thread_rng().gen_range(1000, 5000);
+                    let loop_times = rand::thread_rng().gen_range(1000..5000);
                     for _ in 0..loop_times {
                         stream.write_all_flush(b"1a ").unwrap();
                         std::thread::sleep(std::time::Duration::from_millis(
-                            rand::thread_rng().gen_range(1, 10),
+                            rand::thread_rng().gen_range(1..10),
                         ));
                         if stream.read(&mut buffer).is_ok() {}
                     }
@@ -497,7 +497,7 @@ impl TestConnections {
                 break;
             }
             std::thread::sleep(std::time::Duration::from_millis(
-                rand::thread_rng().gen_range(1, 50),
+                rand::thread_rng().gen_range(1..50),
             ));
         }
         for handle in thread_handles {
