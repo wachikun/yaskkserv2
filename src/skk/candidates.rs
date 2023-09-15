@@ -22,7 +22,7 @@ impl Candidates {
         for u in source {
             match u {
                 b'\r' | b'\n' => {}
-                b'\\' => result.extend_from_slice(br#"\\"#),
+                b'\\' => result.extend_from_slice(br"\\"),
                 b'\"' => result.extend_from_slice(br#"\""#),
                 b';' => result.extend_from_slice(br#"(concat "\073")"#),
                 b'/' => result.extend_from_slice(br#"(concat "\057")"#),

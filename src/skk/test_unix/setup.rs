@@ -222,12 +222,7 @@ impl JisyoDownloader {
         if jisyo_filenames.is_empty() {
             jisyo_full_paths.push(String::from(archive_full_path.trim_end_matches(".gz")));
         } else {
-            jisyo_full_paths.extend(
-                jisyo_filenames
-                    .iter()
-                    .map(|v| Path::get_full_path(v))
-                    .collect::<Vec<String>>(),
-            );
+            jisyo_full_paths.extend(jisyo_filenames.iter().map(|v| Path::get_full_path(v)));
         }
         if Self::is_extracted(md5_full_path) {
             println!("extracted url={download_md5_url}");

@@ -160,6 +160,7 @@ impl Jisyo {
         )
         .unwrap();
         {
+            #[allow(clippy::redundant_clone)]
             let mut config = config.clone();
             config.encoding = Encoding::Euc;
             Yaskkserv2MakeDictionary::run_create_jisyo(&config, &compare_euc_jisyo_full_path)
@@ -325,6 +326,7 @@ impl Jisyo {
             "{jisyo_base_filename}.jisyo_euc_utf8_dictionary_test.dictionary.{encoding_str}.jisyo.euc"
         ));
         {
+            #[allow(clippy::redundant_clone)]
             let mut config = config.clone();
             config.encoding = Encoding::Euc;
             Yaskkserv2MakeDictionary::run_create_jisyo(&config, &euc_jisyo_full_path).unwrap();

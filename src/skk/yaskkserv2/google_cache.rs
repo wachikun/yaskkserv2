@@ -9,9 +9,14 @@ use crate::skk::yaskkserv2::{
 impl GoogleCache {
     pub(in crate::skk) fn get_candidates(midashi: &[u8]) -> Vec<Vec<u8>> {
         let mut cached_candidates: Vec<Vec<u8>> = Vec::new();
-        let rw_lock_read = GOOGLE_CACHE_OBJECT.read().unwrap();
-        if rw_lock_read.map.contains_key(midashi) && rw_lock_read.map[midashi].len() >= 2 {
-            cached_candidates = rw_lock_read.map[midashi].clone();
+        if GOOGLE_CACHE_OBJECT
+            .read()
+            .unwrap()
+            .map
+            .contains_key(midashi)
+            && GOOGLE_CACHE_OBJECT.read().unwrap().map[midashi].len() >= 2
+        {
+            cached_candidates = GOOGLE_CACHE_OBJECT.read().unwrap().map[midashi].clone();
             cached_candidates.remove(0);
         }
         cached_candidates
@@ -24,9 +29,13 @@ impl GoogleCache {
         cache_entries: usize,
         cache_expire_seconds: u64,
     ) -> Result<(), SkkError> {
-        let mut rw_lock_write = GOOGLE_CACHE_OBJECT.write().unwrap();
-        let should_write = if rw_lock_write.map.contains_key(midashi) {
-            candidates.to_vec() != rw_lock_write.map[midashi]
+        let should_write = if GOOGLE_CACHE_OBJECT
+            .write()
+            .unwrap()
+            .map
+            .contains_key(midashi)
+        {
+            candidates.to_vec() != GOOGLE_CACHE_OBJECT.write().unwrap().map[midashi]
         } else {
             true
         };
@@ -37,8 +46,14 @@ impl GoogleCache {
                 .unwrap()
                 .as_secs();
             cache_candidates.insert(0, unix_time_now.to_string().as_bytes().to_vec());
-            rw_lock_write.map.insert(midashi.to_vec(), cache_candidates);
-            let mut expired_map: GoogleCacheBTreeMap = rw_lock_write
+            GOOGLE_CACHE_OBJECT
+                .write()
+                .unwrap()
+                .map
+                .insert(midashi.to_vec(), cache_candidates);
+            let mut expired_map: GoogleCacheBTreeMap = GOOGLE_CACHE_OBJECT
+                .write()
+                .unwrap()
                 .map
                 .clone()
                 .into_iter()
@@ -57,7 +72,7 @@ impl GoogleCache {
                     expired_map.remove(&m.0);
                 }
             }
-            rw_lock_write.map = expired_map.clone();
+            GOOGLE_CACHE_OBJECT.write().unwrap().map = expired_map.clone();
             Self::write(cache_full_path, &expired_map)?;
         }
         Ok(())
@@ -68,8 +83,8 @@ impl GoogleCache {
     ) -> Result<(), SkkError> {
         {
             let Ok(mut rw_lock_write) = GOOGLE_CACHE_OBJECT.write() else {
-            return Err(SkkError::CacheOpen);
-        };
+                return Err(SkkError::CacheOpen);
+            };
             rw_lock_write.map = Self::read(google_cache_full_path)
                 .map_or_else(|_| GoogleCacheBTreeMap::new(), |ok| ok);
         }

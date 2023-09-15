@@ -444,9 +444,9 @@ pub(in crate::skk) mod test_unix {
 
     fn get_random_ascii_vec(length: usize) -> Vec<u8> {
         let mut ascii_vec = Vec::new();
-        let rand_length = rand::thread_rng().gen_range(1..length + 1);
+        let rand_length = rand::thread_rng().gen_range(1..=length);
         for _ in 0..rand_length {
-            ascii_vec.push(rand::thread_rng().gen_range(b'0'..b'9' + 1));
+            ascii_vec.push(rand::thread_rng().gen_range(b'0'..=b'9'));
         }
         ascii_vec
     }

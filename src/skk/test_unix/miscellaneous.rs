@@ -11,10 +11,10 @@ fn quote_skk_jisyo_static_test() {
     let static_not_quote_table = [(r#"abc"#, r#"/abc"#), (r#"ABC"#, r#"/ABC"#)];
     let static_quote_table = [
         ("a\rb\ncA\n\rB\r\nC\r\rX\n\nYZ", r#"/abcABCXYZ"#),
-        (r#"abc\ABC"#, r#"/abc\\ABC"#),
+        (r"abc\ABC", r"/abc\\ABC"),
         (r#"abc"ABC"#, r#"/abc\"ABC"#),
-        (r#"abc;XYZ"#, r#"/abc(concat "\073")XYZ"#),
-        (r#"abc/XYZ"#, r#"/abc(concat "\057")XYZ"#),
+        (r"abc;XYZ", r#"/abc(concat "\073")XYZ"#),
+        (r"abc/XYZ", r#"/abc(concat "\057")XYZ"#),
     ];
     for unit in &static_not_quote_table {
         assert!(!Candidates::need_quote(unit.0.as_bytes()));
@@ -115,7 +115,7 @@ fn remove_duplicates_test() {
             } else {
                 const PRINTABLE_MIN_CODE: u8 = b' ';
                 const PRINTABLE_MAX_CODE: u8 = b'~';
-                rng.gen_range(PRINTABLE_MIN_CODE..PRINTABLE_MAX_CODE + 1)
+                rng.gen_range(PRINTABLE_MIN_CODE..=PRINTABLE_MAX_CODE)
             };
             if previous_u8 == b'/' && next_u8 == b'/' {
                 const SAME_REPLACE_CODE: u8 = b'S';

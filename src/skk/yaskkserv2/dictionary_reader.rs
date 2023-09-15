@@ -508,9 +508,9 @@ pub(in crate::skk) mod test_unix {
 
     fn get_random_ascii_vec(length: usize) -> Vec<u8> {
         let mut ascii_vec = Vec::new();
-        let rand_length = rand::thread_rng().gen_range(1..length + 1);
+        let rand_length = rand::thread_rng().gen_range(1..=length);
         for _ in 0..rand_length {
-            ascii_vec.push(rand::thread_rng().gen_range(b'0'..b'9' + 1));
+            ascii_vec.push(rand::thread_rng().gen_range(b'0'..=b'9'));
         }
         ascii_vec
     }
@@ -525,7 +525,7 @@ pub(in crate::skk) mod test_unix {
         for _ in 0..TEST_LOOP {
             let search_midashis = {
                 let mut search_midashis = Vec::new();
-                let search_rand_length = rand::thread_rng().gen_range(1..100 + 1);
+                let search_rand_length = rand::thread_rng().gen_range(1..=100);
                 for _ in 0..search_rand_length {
                     search_midashis.push(get_random_ascii_vec(10));
                 }
@@ -535,7 +535,7 @@ pub(in crate::skk) mod test_unix {
                 let mut dictionary_block_informations_midashis = Vec::new();
                 {
                     let dictionary_block_informations_rand_length =
-                        rand::thread_rng().gen_range(1..100 + 1);
+                        rand::thread_rng().gen_range(1..=100);
                     for _ in 0..dictionary_block_informations_rand_length {
                         dictionary_block_informations_midashis.push(get_random_ascii_vec(10));
                     }
