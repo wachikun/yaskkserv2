@@ -35,10 +35,7 @@ fn run_cargo(test_name: &str, total_map: &mut BTreeMap<String, Vec<usize>>) {
             if let Some(m) = re_name_unit.captures(&line) {
                 let name = &m[1];
                 let unit = m[2].parse::<usize>().unwrap_or(0);
-                total_map
-                    .entry(String::from(name))
-                    .or_insert_with(Vec::new)
-                    .push(unit);
+                total_map.entry(String::from(name)).or_default().push(unit);
             }
         }
         println!("{line}");
