@@ -509,7 +509,7 @@ impl ConnectSendCompare {
     fn connect(
         &mut self,
         jisyo_full_path: &str,
-        thread_end_counter: &mut Arc<RwLock<usize>>,
+        thread_end_counter: &Arc<RwLock<usize>>,
         is_sequential: bool,
         threads: usize,
     ) {
@@ -564,12 +564,12 @@ impl ConnectSendCompare {
     }
 
     fn run(parameter: ConnectSendCompareRunParameter) {
-        let mut thread_end_counter = Arc::new(RwLock::new(0));
+        let thread_end_counter = Arc::new(RwLock::new(0));
         if parameter.threads == 1 {
             let mut connect_send_compare = Self::new(&parameter, 0);
             connect_send_compare.connect(
                 &parameter.jisyo_full_path,
-                &mut thread_end_counter,
+                &thread_end_counter,
                 parameter.is_sequential,
                 parameter.threads,
             );
@@ -579,7 +579,7 @@ impl ConnectSendCompare {
             let mut thread_handles = Vec::new();
             for thread_index in 0..threads {
                 let thread_parameter = thread_parameter.clone();
-                let mut thread_end_counter = thread_end_counter.clone();
+                let thread_end_counter = thread_end_counter.clone();
                 thread_handles.push(
                     std::thread::Builder::new()
                         .name(String::from(std::thread::current().name().unwrap()))
@@ -588,7 +588,7 @@ impl ConnectSendCompare {
                                 Self::new(&thread_parameter.read().unwrap(), thread_index);
                             connect_send_compare.connect(
                                 &thread_parameter.read().unwrap().jisyo_full_path,
-                                &mut thread_end_counter,
+                                &thread_end_counter,
                                 thread_parameter.read().unwrap().is_sequential,
                                 thread_parameter.read().unwrap().threads,
                             );

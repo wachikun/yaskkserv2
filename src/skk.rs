@@ -543,7 +543,7 @@ fn run_yaskkserv2_impl(core: &mut Yaskkserv2, is_no_daemonize: bool) {
     } else {
         let daemonize = Daemonize::new();
         match daemonize.start() {
-            Ok(_) => core.run(),
+            Ok(()) => core.run(),
             Err(e) => println!("Error: {e}"),
         }
     }

@@ -47,7 +47,7 @@ impl DictionaryCreator {
         )?;
         Self::write_hash(
             &config.dictionary_full_path,
-            &mut hasher,
+            &hasher,
             &mut dictionary_fixed_header,
         )?;
         if config.is_verbose {
@@ -422,7 +422,7 @@ impl DictionaryCreator {
 
     fn write_hash(
         dictionary_full_path: &str,
-        hasher: &mut Sha1,
+        hasher: &Sha1,
         dictionary_fixed_header: &mut DictionaryFixedHeader,
     ) -> Result<(), SkkError> {
         let mut writer = OpenOptions::new().write(true).open(dictionary_full_path)?;

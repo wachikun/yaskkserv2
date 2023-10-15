@@ -356,7 +356,7 @@ impl Yaskkserv2 {
                             &mut next_socket_index,
                             &mut sockets,
                             &mut sockets_some_count,
-                            &mut poll,
+                            &poll,
                             &listener,
                             sockets_length,
                             #[cfg(test)]
@@ -377,7 +377,7 @@ impl Yaskkserv2 {
                             &poll,
                             token,
                             #[cfg(test)]
-                            &mut take_index_for_test,
+                            take_index_for_test,
                             #[cfg(test)]
                             take_count_for_test,
                         ) {
@@ -397,7 +397,7 @@ impl Yaskkserv2 {
         next_socket_index: &mut usize,
         sockets: &mut [Option<MioSocket>],
         sockets_some_count: &mut usize,
-        poll: &mut Poll,
+        poll: &Poll,
         listener: &TcpListener,
         sockets_length: usize,
         #[cfg(test)] take_index_for_test: &mut usize,
@@ -441,7 +441,7 @@ impl Yaskkserv2 {
         dictionary_file: &mut DictionaryFile,
         poll: &Poll,
         token: Token,
-        #[cfg(test)] take_index_for_test: &mut usize,
+        #[cfg(test)] take_index_for_test: usize,
         #[cfg(test)] take_count_for_test: usize,
     ) -> Result<RunLoopTokenResult, SkkError> {
         #[allow(clippy::get_unwrap)]
@@ -468,7 +468,7 @@ impl Yaskkserv2 {
                 {
                     if take_count_for_test > 0
                         && *sockets_some_count == 0
-                        && *take_index_for_test >= take_count_for_test
+                        && take_index_for_test >= take_count_for_test
                     {
                         return Ok(RunLoopTokenResult::Return);
                     }
