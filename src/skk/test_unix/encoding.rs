@@ -67,7 +67,7 @@ fn encoding_all_test() {
         return;
     }
     let re_line = Regex::new(r"^(0x[^\s]+)\s+([^\s]+)\s+#").unwrap();
-    let re_euc_ignore = Regex::new(r#"^0x[89][0-9A-F]"#).unwrap();
+    let re_euc_ignore = Regex::new(r"^0x[89][0-9A-F]").unwrap();
     for line in BufReader::new(File::open(&list_full_path).unwrap()).lines() {
         let line = line.unwrap();
         if let Some(m) = re_line.captures(&line) {

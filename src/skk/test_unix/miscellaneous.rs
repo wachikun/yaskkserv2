@@ -8,9 +8,9 @@ use crate::skk::{Candidates, Encoding};
 
 #[test]
 fn quote_skk_jisyo_static_test() {
-    let static_not_quote_table = [(r#"abc"#, r#"/abc"#), (r#"ABC"#, r#"/ABC"#)];
+    let static_not_quote_table = [(r"abc", r"/abc"), (r"ABC", r"/ABC")];
     let static_quote_table = [
-        ("a\rb\ncA\n\rB\r\nC\r\rX\n\nYZ", r#"/abcABCXYZ"#),
+        ("a\rb\ncA\n\rB\r\nC\r\rX\n\nYZ", r"/abcABCXYZ"),
         (r"abc\ABC", r"/abc\\ABC"),
         (r#"abc"ABC"#, r#"/abc\"ABC"#),
         (r"abc;XYZ", r#"/abc(concat "\073")XYZ"#),
