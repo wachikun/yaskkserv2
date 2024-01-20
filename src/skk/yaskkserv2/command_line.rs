@@ -199,7 +199,7 @@ impl Yaskkserv2CommandLine {
             *result_is_exit = true;
         }
         if let Some(full_path) = matches.value_of("config-filename") {
-            self.config.config_full_path = String::from(full_path);
+            self.config.full_path = String::from(full_path);
         }
         if matches.is_present("no-daemonize") {
             self.config.is_no_daemonize = true;
