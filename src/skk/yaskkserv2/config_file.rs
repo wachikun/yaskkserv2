@@ -25,7 +25,7 @@ impl Yaskkserv2ConfigFile {
     }
 
     pub(in crate::skk) fn read(&mut self) -> Result<(), SkkError> {
-        let file = File::open(&self.config.config_full_path);
+        let file = File::open(&self.config.full_path);
         if file.is_err() {
             return Ok(());
         }
