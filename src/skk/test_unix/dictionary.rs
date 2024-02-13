@@ -11,7 +11,7 @@
 //! - network を介さないので特性を見たり性能の評価に向く
 //! - 特徴が出やすい位置にある midashi だけを検索
 //!
-//! 各 test の len() next() last() は下記のように `--features="print_debug_for_benchmark"` を
+//! 各 test の `len()` `next()` `last()` は下記のように `--features="print_debug_for_benchmark"` を
 //! 追加して `yaskkserv2_make_dictionary` を実行すると表示されるので、意味のありそうな単語を
 //! そこから選択する。
 //!
