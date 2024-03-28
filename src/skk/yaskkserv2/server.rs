@@ -47,11 +47,7 @@ impl Server {
                 }
             }
             b'2' => stream.write_all_flush_ignore_error(format!("{PKG_VERSION} ").as_bytes()),
-            b'3' => stream.write_all_flush_ignore_error(
-                self.config
-                    .hostname_and_ip_address_for_protocol_3
-                    .as_bytes(),
-            ),
+            b'3' => stream.write_all_flush_ignore_error(format!("{} ", self.config.hostname_and_ip_address_for_protocol_3).as_bytes()),
             b'4' => {
                 if self.config.is_midashi_utf8 {
                     let utf8_to_euc_buffer = crate::skk::encoding_simple::Euc::encode(buffer);
