@@ -27,7 +27,7 @@ use mio::{Events, Interest, Poll, Token};
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek, Write};
-use std::net::Shutdown;
+use std::net::{Shutdown, SocketAddr};
 use std::sync::RwLock;
 #[cfg(all(not(test), unix))]
 use syslog::{Facility, Formatter3164};
@@ -328,12 +328,10 @@ impl Yaskkserv2 {
         let mut next_socket_index = 0;
         let mut poll = Poll::new()?;
         let mut listener = TcpListener::bind(
-            format!(
-                "{}:{}",
-                &self.server.config.listen_address, &self.server.config.port
+            SocketAddr::new(
+                self.server.config.listen_address.parse().unwrap(),
+                self.server.config.port.parse().unwrap()
             )
-            .parse()
-            .unwrap(),
         )?;
         poll.registry()
             .register(&mut listener, LISTENER, Interest::READABLE)?;
