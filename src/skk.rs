@@ -12,7 +12,6 @@ mod test_unix;
 #[cfg(unix)]
 use daemonize::Daemonize;
 use rustc_hash::FxHashMap;
-use std::convert::TryInto;
 
 use crate::skk::yaskkserv2::Yaskkserv2;
 use crate::skk::yaskkserv2_make_dictionary::Yaskkserv2MakeDictionary;
@@ -62,37 +61,6 @@ fn once_init_encoding_table(encoding_table: &[u8]) {
         encoding_simple::EncodingTable::setup(encoding_table)
             .expect("encoding_simple setup failed");
     });
-}
-
-trait U8Slice {
-    // buffer[offset].to_ne_u32() のように書くと遅いので引数に offset を取っている
-    // buffer[offset..offset + 4].to_ne_u32() と書くと buffer.to_ne_u32(offset) と等速だが繁雑
-    fn to_ne_u32(&self, offset: usize) -> u32;
-    fn to_ne_u32_2(&self, offset: usize) -> (u32, u32);
-    fn to_ne_u32_3(&self, offset: usize) -> (u32, u32, u32);
-    fn to_array_4(&self, offset: usize) -> [u8; 4];
-}
-
-impl U8Slice for [u8] {
-    fn to_ne_u32(&self, offset: usize) -> u32 {
-        u32::from_ne_bytes(self[offset..offset + 4].try_into().unwrap())
-    }
-
-    fn to_ne_u32_2(&self, offset: usize) -> (u32, u32) {
-        (self.to_ne_u32(offset), self.to_ne_u32(offset + 4))
-    }
-
-    fn to_ne_u32_3(&self, offset: usize) -> (u32, u32, u32) {
-        (
-            self.to_ne_u32(offset),
-            self.to_ne_u32(offset + 4),
-            self.to_ne_u32(offset + 2 * 4),
-        )
-    }
-
-    fn to_array_4(&self, offset: usize) -> [u8; 4] {
-        self[offset..offset + 4].try_into().unwrap()
-    }
 }
 
 struct Dictionary;

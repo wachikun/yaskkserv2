@@ -16,7 +16,7 @@ impl GoogleCache {
             .contains_key(midashi)
             && GOOGLE_CACHE_OBJECT.read().unwrap().map[midashi].len() >= 2
         {
-            cached_candidates = GOOGLE_CACHE_OBJECT.read().unwrap().map[midashi].clone();
+            cached_candidates.clone_from(&GOOGLE_CACHE_OBJECT.read().unwrap().map[midashi]);
             cached_candidates.remove(0);
         }
         cached_candidates
@@ -85,8 +85,8 @@ impl GoogleCache {
             let Ok(mut rw_lock_write) = GOOGLE_CACHE_OBJECT.write() else {
                 return Err(SkkError::CacheOpen);
             };
-            rw_lock_write.map = Self::read(google_cache_full_path)
-                .map_or_else(|_| GoogleCacheBTreeMap::new(), |ok| ok);
+            rw_lock_write.map =
+                Self::read(google_cache_full_path).unwrap_or_else(|_| GoogleCacheBTreeMap::new());
         }
         Ok(())
     }

@@ -150,6 +150,7 @@ pub(in crate::skk) trait TcpStreamSkk: Write {
         Ok(())
     }
 
+    #[cfg(test)]
     fn write_disconnect_flush(&mut self) -> Result<(), std::io::Error> {
         self.write_all_flush(b"0")
     }
