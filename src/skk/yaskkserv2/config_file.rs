@@ -98,7 +98,7 @@ impl Yaskkserv2ConfigFile {
             let key = "port";
             if candidates.contains_key(key) && self.config.port == self.default_config.port {
                 yaskkserv2::command_line::Yaskkserv2CommandLine::port_validator(&candidates[key])?;
-                self.config.port = candidates[key].clone();
+                self.config.port.clone_from(&candidates[key]);
             }
         }
         validate_and_set_config_integer!(
@@ -114,7 +114,7 @@ impl Yaskkserv2ConfigFile {
                 yaskkserv2::command_line::Yaskkserv2CommandLine::listen_address_validator(
                     &candidates[key],
                 )?;
-                self.config.listen_address = candidates[key].clone();
+                self.config.listen_address.clone_from(&candidates[key]);
             }
         }
         {
@@ -124,7 +124,9 @@ impl Yaskkserv2ConfigFile {
                     == self.default_config.hostname_and_ip_address_for_protocol_3
             {
                 yaskkserv2::command_line::Yaskkserv2CommandLine::hostname_and_ip_address_address_validator(&candidates[key])?;
-                self.config.hostname_and_ip_address_for_protocol_3 = candidates[key].clone();
+                self.config
+                    .hostname_and_ip_address_for_protocol_3
+                    .clone_from(&candidates[key]);
             }
         }
         validate_and_set_config_integer!(

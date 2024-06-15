@@ -171,68 +171,11 @@ impl Server {
 
 #[cfg(test)]
 pub(in crate::skk) mod test_unix {
-    use rand::Rng;
-
     use crate::skk::yaskkserv2::{
         DictionaryFile, Server, TcpStream, TcpStreamSkk, Write, Yaskkserv2,
     };
 
-    struct ServerDebugImpl;
-
-    impl ServerDebugImpl {
-        #[allow(clippy::branches_sharing_code)]
-        fn send_split(mut stream: &TcpStream, buffer: &[u8], split: usize) {
-            if split < 2 {
-                if let Err(e) = stream.write_all(buffer) {
-                    Yaskkserv2::log_error(&format!("{e}"));
-                }
-                if let Err(e) = stream.flush() {
-                    Yaskkserv2::log_error(&format!("{e}"));
-                }
-            } else {
-                if let Err(e) =
-                    stream.write_all(&buffer.iter().take(split).copied().collect::<Vec<u8>>())
-                {
-                    Yaskkserv2::log_error(&format!("{e}"));
-                }
-                if let Err(e) =
-                    stream.write_all(&buffer.iter().skip(split).copied().collect::<Vec<u8>>())
-                {
-                    Yaskkserv2::log_error(&format!("{e}"));
-                }
-                if let Err(e) = stream.flush() {
-                    Yaskkserv2::log_error(&format!("{e}"));
-                }
-            }
-        }
-
-        fn send_half_each(stream: &TcpStream, buffer: &[u8]) {
-            Self::send_split(stream, buffer, buffer.len() / 2);
-        }
-
-        fn send_split_random(stream: &TcpStream, buffer: &[u8]) {
-            Self::send_split(
-                stream,
-                buffer,
-                rand::thread_rng().gen_range(1..buffer.len()),
-            );
-        }
-
-        #[allow(dead_code)]
-        fn send_double(mut stream: &TcpStream, buffer: &[u8]) {
-            if let Err(e) =
-                stream.write_all(&buffer.iter().chain(buffer).copied().collect::<Vec<u8>>())
-            {
-                Yaskkserv2::log_error(&format!("{e}"));
-            }
-            if let Err(e) = stream.flush() {
-                Yaskkserv2::log_error(&format!("{e}"));
-            }
-        }
-    }
-
     pub(in crate::skk) trait ServerDebug {
-        fn send_bytes_debug_bad_condition(stream: &mut TcpStream, buffer: &[u8]);
         fn send_bytes_debug(stream: &mut TcpStream, buffer: &[u8]);
         fn send_bytes_std_net_tcp(stream: &std::net::TcpStream, buffer: &[u8]);
         fn handle_client_protocol_1_simple_std_net_tcp(
@@ -244,20 +187,6 @@ pub(in crate::skk) mod test_unix {
     }
 
     impl ServerDebug for Server {
-        fn send_bytes_debug_bad_condition(stream: &mut TcpStream, buffer: &[u8]) {
-            let now = std::time::SystemTime::now();
-            let unixtime = now.duration_since(std::time::UNIX_EPOCH).unwrap();
-            let sec = unixtime.as_secs();
-            let mod_base = 4;
-            if sec % mod_base == 0 {
-                ServerDebugImpl::send_half_each(stream, buffer);
-            } else if sec % mod_base == 1 {
-                ServerDebugImpl::send_split_random(stream, buffer);
-            } else {
-                stream.write_all_flush_ignore_error(buffer);
-            }
-        }
-
         fn send_bytes_debug(stream: &mut TcpStream, buffer: &[u8]) {
             stream.write_all_flush_ignore_error(buffer);
         }

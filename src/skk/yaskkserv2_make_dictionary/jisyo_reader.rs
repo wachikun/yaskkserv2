@@ -198,7 +198,7 @@ impl JisyoReader {
     ) -> bool {
         let mut print_skip_warning_and_add_line_number = |message: &str| {
             let line_string = Self::get_line_string(chomped_line, jisyo_encoding)
-                .map_or_else(|_| String::new(), |ok| ok);
+                .unwrap_or_else(|_| String::new());
             Yaskkserv2MakeDictionary::print_warning(&format!(
                 "SKIPPED! ({}) {}:{} {:?}",
                 message, full_path, line_number, &line_string
