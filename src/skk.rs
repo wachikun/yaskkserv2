@@ -208,7 +208,7 @@ trait ToFromNeBytes {
         let mut result = Vec::new();
         unsafe {
             result.extend_from_slice(std::slice::from_raw_parts(
-                (self as *const Self).cast::<u8>(),
+                std::ptr::from_ref::<Self>(self).cast::<u8>(),
                 std::mem::size_of::<Self>(),
             ));
         }
@@ -500,12 +500,12 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
     config_file.read()?;
     let config = config_file.get_config();
     core.setup(&config)?;
-    run_yaskkserv2_impl(&mut core, config.is_no_daemonize);
+    run_yaskkserv2_impl(&core, config.is_no_daemonize);
     Ok(())
 }
 
 #[cfg(unix)]
-fn run_yaskkserv2_impl(core: &mut Yaskkserv2, is_no_daemonize: bool) {
+fn run_yaskkserv2_impl(core: &Yaskkserv2, is_no_daemonize: bool) {
     if is_no_daemonize {
         core.run();
     } else {

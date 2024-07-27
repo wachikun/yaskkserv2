@@ -28,7 +28,7 @@ impl Jisyo {
     }
 
     fn get_writer_and_jisyo_entries_no_encoding_conversion(
-        &mut self,
+        &self,
         jisyo_filename: Option<&str>,
     ) -> (BufWriter<File>, Vec<Vec<u8>>) {
         let jisyo_entries = jisyo_filename.map_or_else(Vec::new, |jisyo_filename| {

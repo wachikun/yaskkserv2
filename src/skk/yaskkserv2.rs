@@ -252,7 +252,7 @@ impl Yaskkserv2 {
         Ok(())
     }
 
-    pub(in crate::skk) fn run(&mut self) {
+    pub(in crate::skk) fn run(&self) {
         Self::log_info(&format!(
             "version {} (port={})",
             PKG_VERSION, self.server.config.port
@@ -316,7 +316,7 @@ impl Yaskkserv2 {
     /// なお、 `Vec` は `HashMap` に比べて empty index を探す必要がある分だけ `insert()` 相当の
     /// 処理が少しだけ高くつくが、最悪のケースでもそもそも `insert()` 相当処理の実行頻度は
     /// 低いので問題にならない。
-    fn run_loop(&mut self, #[cfg(test)] take_count_for_test: usize) -> Result<(), SkkError> {
+    fn run_loop(&self, #[cfg(test)] take_count_for_test: usize) -> Result<(), SkkError> {
         const LISTENER: Token = Token(MAX_CONNECTION);
         #[cfg(test)]
         let mut take_index_for_test = 0;
@@ -328,12 +328,10 @@ impl Yaskkserv2 {
         let mut sockets_some_count = 0;
         let mut next_socket_index = 0;
         let mut poll = Poll::new()?;
-        let mut listener = TcpListener::bind(
-            SocketAddr::new(
-                self.server.config.listen_address.parse().unwrap(),
-                self.server.config.port.parse().unwrap()
-            )
-        )?;
+        let mut listener = TcpListener::bind(SocketAddr::new(
+            self.server.config.listen_address.parse().unwrap(),
+            self.server.config.port.parse().unwrap(),
+        ))?;
         poll.registry()
             .register(&mut listener, LISTENER, Interest::READABLE)?;
         let mut events = Events::with_capacity(MAX_CONNECTION);
@@ -432,7 +430,7 @@ impl Yaskkserv2 {
 
     #[allow(clippy::too_many_arguments)]
     fn run_loop_token(
-        &mut self,
+        &self,
         next_socket_index: &mut usize,
         sockets: &mut [Option<MioSocket>],
         sockets_some_count: &mut usize,
@@ -491,7 +489,7 @@ impl Yaskkserv2 {
     }
 
     fn read_until_skk_server(
-        &mut self,
+        &self,
         socket: &mut MioSocket,
         buffer: &mut Vec<u8>,
         dictionary_file: &mut DictionaryFile,

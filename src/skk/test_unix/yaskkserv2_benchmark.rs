@@ -397,7 +397,7 @@ fn yaskkserv2_benchmark_binary_normal_send_sequential_test() {
     let child = match std::process::Command::new("target/release/yaskkserv2")
         .arg("--no-daemonize")
         .arg(format!("--port={port}"))
-        .arg(&Path::get_full_path_yaskkserv2_dictionary(Encoding::Utf8))
+        .arg(Path::get_full_path_yaskkserv2_dictionary(Encoding::Utf8))
         .spawn()
     {
         Ok(ok) => ok,
