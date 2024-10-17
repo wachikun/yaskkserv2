@@ -22,8 +22,9 @@ static UTF8_JISYO_FULL_PATHS: once_cell::sync::Lazy<RwLock<Vec<String>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
 static TEST_RUNNING_COUNT: once_cell::sync::Lazy<RwLock<usize>> =
     once_cell::sync::Lazy::new(|| RwLock::new(0));
-type PanicDefaultHook =
-    once_cell::sync::Lazy<RwLock<Box<dyn Fn(&std::panic::PanicInfo<'_>) + 'static + Sync + Send>>>;
+type PanicDefaultHook = once_cell::sync::Lazy<
+    RwLock<Box<dyn Fn(&std::panic::PanicHookInfo<'_>) + 'static + Sync + Send>>,
+>;
 static PANIC_DEFAULT_HOOK: PanicDefaultHook =
     once_cell::sync::Lazy::new(|| RwLock::new(std::panic::take_hook()));
 static PANIC_THREAD_NAME_SET: once_cell::sync::Lazy<RwLock<FxHashSet<String>>> =
