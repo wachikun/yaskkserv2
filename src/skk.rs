@@ -500,7 +500,7 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
     config_file.read()?;
     let config = config_file.get_config();
     core.setup(&config)?;
-    run_yaskkserv2_impl(&core, config.is_no_daemonize);
+    run_yaskkserv2_impl(&mut core, config.is_no_daemonize);
     Ok(())
 }
 
