@@ -407,10 +407,10 @@ impl DictionaryReader {
                             &buffer[candidates_start..(candidates_start + lf_find)],
                         );
                         new_result.push(b'1');
-                        new_result = Candidates::merge_trimmed_slash_candidates(
+                        new_result.extend(Candidates::merge_trimmed_slash_candidates(
                             base_candidates_bytes,
                             new_candidates_bytes,
-                        );
+                        ));
                     }
                     *result = new_result;
                 }
