@@ -149,12 +149,8 @@ impl JisyoReader {
             let removed_duplicates_candidates = Candidates::remove_duplicates_bytes(&candidates);
             if candidates != removed_duplicates_candidates {
                 Yaskkserv2MakeDictionary::print_warning(&format!(
-                    r#"CORRECTED! (DUPLICATE CANDIDATES) {}:{} {:?}    {:?} -> {:?}"#,
-                    jisyo_full_path,
-                    line_number,
+                    r"CORRECTED! (DUPLICATE CANDIDATES) {jisyo_full_path}:{line_number} {:?}    {candidates:?} -> {removed_duplicates_candidates:?}",
                     &Self::get_line_string(chomped_line, jisyo_encoding)?,
-                    candidates,
-                    removed_duplicates_candidates
                 ));
             }
             #[allow(clippy::map_entry)]
@@ -169,9 +165,7 @@ impl JisyoReader {
             }
         } else {
             Yaskkserv2MakeDictionary::print_warning(&format!(
-                r#"SKIPPED! (UNKNOWN FORMAT) {}:{} {:?}"#,
-                jisyo_full_path,
-                line_number,
+                r"SKIPPED! (UNKNOWN FORMAT) {jisyo_full_path}:{line_number} {:?}",
                 &Self::get_line_string(chomped_line, jisyo_encoding)?,
             ));
         }

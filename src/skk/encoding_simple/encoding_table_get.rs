@@ -3,8 +3,8 @@ use crate::skk::encoding_simple::EncodingTable;
 impl EncodingTable {
     // Self::create_src_table("euc-jis-2004-std.txt") で作成
     #[allow(clippy::too_many_lines)]
-    pub(crate) const fn get() -> &'static [u8] {
-        &[
+    pub(crate) fn get() -> Vec<u8> {
+        vec![
             // header
             0x01, 0x00, 0x00, 0x00, // version
             0x20, 0x00, 0x00, 0x00, // header_length

@@ -60,11 +60,12 @@ fn yaskkserv_core(
             .threads(threads);
     ConnectSendCompare::run(parameter);
     // FIXME! この kill だけでは処理できないケースが多々ある
-    let _droppable = std::process::Command::new("kill")
+    let _ = std::process::Command::new("kill")
         .arg("-TERM")
         .arg(format!("{}", child.id()))
         .spawn()
-        .unwrap();
+        .unwrap()
+        .wait();
 }
 
 //

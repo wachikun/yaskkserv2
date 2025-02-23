@@ -546,7 +546,7 @@ impl ConnectSendCompare {
                 }
                 if get_midashi_send_candidates_result.cannot_euc_conversion_skip_count > 0 {
                     println!(
-                        r#"cannot_euc_conversion: {} lines SKIPPED"#,
+                        r"cannot_euc_conversion: {} lines SKIPPED",
                         get_midashi_send_candidates_result.cannot_euc_conversion_skip_count
                     );
                 }

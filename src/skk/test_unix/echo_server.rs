@@ -232,11 +232,12 @@ fn echo_server_c_server(
     };
     connect_for_echo_server(name, port, is_sequential, threads);
     // FIXME! この kill だけでは処理できないケースが多々ある
-    let _droppable = std::process::Command::new("kill")
+    let _ = std::process::Command::new("kill")
         .arg("-TERM")
         .arg(format!("{}", child.id()))
         .spawn()
-        .unwrap();
+        .unwrap()
+        .wait();
 }
 
 #[test]

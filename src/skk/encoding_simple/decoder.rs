@@ -18,7 +18,7 @@ impl Decoder {
         }
         let high = high - 0x8e;
         let low = low - 0xa1;
-        let result = (low as usize) << 8 | high as usize;
+        let result = ((low as usize) << 8) | high as usize;
         if result > Self::EUC_2_TO_UTF8_VEC_INDEX_MAXIMUM {
             return Self::EUC_2_TO_UTF8_VEC_INDEX_EMPTY;
         }
