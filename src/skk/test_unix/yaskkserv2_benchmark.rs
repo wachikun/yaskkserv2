@@ -95,7 +95,7 @@ impl Yaskkserv2MakeDictionaryTest {
         for _ in 0..Self::LOOP {
             Yaskkserv2MakeDictionary::run_create_dictionary(
                 &config.clone(),
-                encoding_table,
+                &encoding_table,
                 &[jisyo_full_path.clone()],
             )
             .unwrap();
@@ -419,11 +419,12 @@ fn yaskkserv2_benchmark_binary_normal_send_sequential_test() {
     .is_sequential(true);
     ConnectSendCompare::run(parameter);
     // FIXME!
-    let _droppable = std::process::Command::new("kill")
+    let _ = std::process::Command::new("kill")
         .arg("-TERM")
         .arg(format!("{}", child.id()))
         .spawn()
-        .unwrap();
+        .unwrap()
+        .wait();
     setup::exit();
 }
 

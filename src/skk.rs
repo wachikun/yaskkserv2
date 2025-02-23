@@ -500,7 +500,7 @@ pub fn run_yaskkserv2() -> Result<(), SkkError> {
     config_file.read()?;
     let config = config_file.get_config();
     core.setup(&config)?;
-    run_yaskkserv2_impl(&mut core, config.is_no_daemonize);
+    run_yaskkserv2_impl(&core, config.is_no_daemonize);
     Ok(())
 }
 
@@ -518,7 +518,7 @@ fn run_yaskkserv2_impl(core: &Yaskkserv2, is_no_daemonize: bool) {
 }
 
 #[cfg(not(unix))]
-fn run_yaskkserv2_impl(core: &mut Yaskkserv2, _is_no_daemonize: bool) {
+fn run_yaskkserv2_impl(core: &Yaskkserv2, _is_no_daemonize: bool) {
     core.run();
 }
 
@@ -534,7 +534,7 @@ pub fn run_yaskkserv2_make_dictionary() -> Result<(), SkkError> {
         return Ok(());
     }
     let encoding_table = encoding_simple::EncodingTable::get();
-    once_init_encoding_table(encoding_table);
+    once_init_encoding_table(&encoding_table);
     if !command_line.get_input_cache_full_path().is_empty() {
         let config = command_line.get_config();
         Yaskkserv2MakeDictionary::run_create_jisyo_from_cache(
@@ -545,7 +545,7 @@ pub fn run_yaskkserv2_make_dictionary() -> Result<(), SkkError> {
     } else if command_line.get_output_jisyo_full_path().is_empty() {
         Yaskkserv2MakeDictionary::run_create_dictionary(
             &command_line.get_config(),
-            encoding_table,
+            &encoding_table,
             &command_line.get_jisyo_full_paths(),
         )?;
     } else {

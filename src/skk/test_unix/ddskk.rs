@@ -39,14 +39,10 @@ impl DaredevilSkk {
             .unwrap();
         writer.write_all(elisp_str.as_bytes()).unwrap();
         writer.flush().unwrap();
-        let mut child = match std::process::Command::new("emacs")
+        let mut child = std::process::Command::new("emacs")
             .arg("--script")
             .arg(elisp_full_path)
-            .spawn()
-        {
-            Ok(ok) => ok,
-            Err(e) => return Err(e),
-        };
+            .spawn()?;
         child.wait().unwrap();
         Ok(())
     }

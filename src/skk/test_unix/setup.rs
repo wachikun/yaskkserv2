@@ -333,7 +333,7 @@ impl OnceInit {
     fn create_dictionary(config: &Config, jisyo_full_paths: &[String]) {
         Yaskkserv2MakeDictionary::run_create_dictionary(
             config,
-            encoding_simple::EncodingTable::get(),
+            &encoding_simple::EncodingTable::get(),
             jisyo_full_paths,
         )
         .unwrap();
@@ -529,7 +529,7 @@ int main(int argc, char *argv[]) {
         ONCE_INIT.call_once(|| {
             Self::setup_panic_hook();
             std::fs::create_dir_all(Path::get_full_path_test_base()).unwrap();
-            once_init_encoding_table(encoding_simple::EncodingTable::get());
+            once_init_encoding_table(&encoding_simple::EncodingTable::get());
             let jisyo_full_paths = JisyoDownloader::download_and_extract();
             let config = Config::new();
             if JisyoDownloader::is_converted() {

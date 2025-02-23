@@ -31,15 +31,13 @@ impl Yaskkserv2ConfigFile {
         }
         let re_comment = Regex::new(r"^\s*[;#]").unwrap();
         let mut candidates = FxHashMap::default();
+        let re_assignment = Regex::new(r"^\s*([^=\s]+)\s*=\s*(.+)").unwrap();
         for line_result in BufReader::new(file.unwrap()).lines() {
             let line = line_result?;
             if line.len() < 2 || re_comment.is_match(&line) {
                 continue;
             }
-            if let Some(m) = Regex::new(r"^\s*([^=\s]+)\s*=\s*(.+)")
-                .unwrap()
-                .captures(&line)
-            {
+            if let Some(m) = re_assignment.captures(&line) {
                 candidates.insert(String::from(&m[1]), String::from(&m[2]));
             }
         }

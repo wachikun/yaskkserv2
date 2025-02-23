@@ -49,7 +49,7 @@ impl Jisyo {
 
     fn compare_and_get_hash(
         jisyo_full_path: &str,
-        jisyo_hash: &Option<[u8; SHA1SUM_LENGTH]>,
+        jisyo_hash: Option<&[u8; SHA1SUM_LENGTH]>,
     ) -> [u8; SHA1SUM_LENGTH] {
         let mut hasher = Sha1::new();
         let mut buffer = Vec::new();
@@ -57,8 +57,8 @@ impl Jisyo {
         reader.read_to_end(&mut buffer).unwrap();
         hasher.update(&buffer);
         let digest: [u8; 20] = hasher.finalize().as_slice().try_into().unwrap();
-        if let Some(jisyo_hash) = *jisyo_hash {
-            assert_eq!(digest, jisyo_hash);
+        if let Some(jisyo_hash) = jisyo_hash {
+            assert_eq!(digest, *jisyo_hash);
         }
         digest
     }
@@ -155,7 +155,7 @@ impl Jisyo {
             .dictionary_full_path(dictionary_from_test_jisyo_full_path.clone());
         Yaskkserv2MakeDictionary::run_create_dictionary(
             &config,
-            encoding_table,
+            &encoding_table,
             &[self.test_jisyo_full_path.clone()],
         )
         .unwrap();
@@ -174,23 +174,23 @@ impl Jisyo {
         }
         self.compare_euc_jisyo_hash = Some(Self::compare_and_get_hash(
             &compare_euc_jisyo_full_path,
-            &self.compare_euc_jisyo_hash,
+            self.compare_euc_jisyo_hash.as_ref(),
         ));
         self.compare_utf8_jisyo_hash = Some(Self::compare_and_get_hash(
             &compare_utf8_jisyo_full_path,
-            &self.compare_utf8_jisyo_hash,
+            self.compare_utf8_jisyo_hash.as_ref(),
         ));
         match dictionary_from_test_jisyo_encoding {
             Encoding::Euc => {
                 Self::compare_and_create_dictionary(
-                    encoding_table,
+                    &encoding_table,
                     &dictionary_from_test_jisyo_full_path,
                     &dictionary_euc_from_compare_euc_jisyo_full_path,
                     &compare_euc_jisyo_full_path,
                     Encoding::Euc,
                 );
                 Self::compare_and_create_dictionary(
-                    encoding_table,
+                    &encoding_table,
                     &dictionary_from_test_jisyo_full_path,
                     &dictionary_euc_from_compare_utf8_jisyo_full_path,
                     &compare_utf8_jisyo_full_path,
@@ -199,14 +199,14 @@ impl Jisyo {
             }
             Encoding::Utf8 => {
                 Self::compare_and_create_dictionary(
-                    encoding_table,
+                    &encoding_table,
                     &dictionary_from_test_jisyo_full_path,
                     &dictionary_utf8_from_compare_euc_jisyo_full_path,
                     &compare_euc_jisyo_full_path,
                     Encoding::Utf8,
                 );
                 Self::compare_and_create_dictionary(
-                    encoding_table,
+                    &encoding_table,
                     &dictionary_from_test_jisyo_full_path,
                     &dictionary_utf8_from_compare_utf8_jisyo_full_path,
                     &compare_utf8_jisyo_full_path,
@@ -318,7 +318,7 @@ impl Jisyo {
             .dictionary_full_path(output_dictionary_full_path);
         Yaskkserv2MakeDictionary::run_create_dictionary(
             &config,
-            encoding_simple::EncodingTable::get(),
+            &encoding_simple::EncodingTable::get(),
             &[skk_jisyo_full_path],
         )
         .unwrap();
@@ -488,8 +488,8 @@ impl EucUtf8OkuriAriNashi {
         let source_jisyo_full_path =
             Self::create_source_jisyo(name, source_jisyo_encoding, source_jisyo_bytes);
         let encoding_table = encoding_simple::EncodingTable::get();
-        Self::compare(encoding_table, Encoding::Euc, &source_jisyo_full_path);
-        Self::compare(encoding_table, Encoding::Utf8, &source_jisyo_full_path);
+        Self::compare(&encoding_table, Encoding::Euc, &source_jisyo_full_path);
+        Self::compare(&encoding_table, Encoding::Utf8, &source_jisyo_full_path);
     }
 }
 
