@@ -23,12 +23,12 @@ use crate::skk::{
     Yaskkserv2MakeDictionary, DEFAULT_MAX_SERVER_COMPLETIONS,
 };
 
-pub(in crate::skk) static INIT_MUTEX_LOCK: once_cell::sync::Lazy<Mutex<()>> =
-    once_cell::sync::Lazy::new(|| Mutex::new(()));
-pub(in crate::skk) static TEST_MUTEX_LOCK: once_cell::sync::Lazy<Mutex<()>> =
-    once_cell::sync::Lazy::new(|| Mutex::new(()));
-pub(in crate::skk) static MANY_THREAD_MUTEX_LOCK: once_cell::sync::Lazy<Mutex<()>> =
-    once_cell::sync::Lazy::new(|| Mutex::new(()));
+pub(in crate::skk) static INIT_MUTEX_LOCK: std::sync::LazyLock<Mutex<()>> =
+    std::sync::LazyLock::new(|| Mutex::new(()));
+pub(in crate::skk) static TEST_MUTEX_LOCK: std::sync::LazyLock<Mutex<()>> =
+    std::sync::LazyLock::new(|| Mutex::new(()));
+pub(in crate::skk) static MANY_THREAD_MUTEX_LOCK: std::sync::LazyLock<Mutex<()>> =
+    std::sync::LazyLock::new(|| Mutex::new(()));
 
 pub(in crate::skk) const DEBUG_FORCE_EXIT_DIRECTORY: &str = "DEBUG_FORCE_EXIT";
 const MANY_THREADS: usize = 8;

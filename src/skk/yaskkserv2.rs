@@ -66,8 +66,8 @@ const MIDASHI_VEC_CAPACITY: usize = 1024;
 
 const INITIAL_DICTIONARY_FILE_READ_BUFFER_LENGTH: usize = 8 * 1024;
 
-static GOOGLE_CACHE_OBJECT: once_cell::sync::Lazy<RwLock<GoogleCacheObject>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(GoogleCacheObject::new()));
+static GOOGLE_CACHE_OBJECT: std::sync::LazyLock<RwLock<GoogleCacheObject>> =
+    std::sync::LazyLock::new(|| RwLock::new(GoogleCacheObject::new()));
 
 pub(in crate::skk) enum HandleClientResult {
     Continue,
@@ -528,7 +528,7 @@ impl Yaskkserv2 {
                             peer_addr_error.kind(),
                             self.server.config.port
                         )),
-                    };
+                    }
                     *is_shutdown = true;
                     HandleClientResult::Exit
                 }
