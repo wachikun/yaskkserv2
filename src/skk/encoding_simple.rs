@@ -58,16 +58,16 @@ use crate::skk::{Encoding, EncodingOptions, SkkError};
 
 static EUC_2_TO_UTF8_VEC: LookupTableCell<Vec<[u8; 4]>> = LookupTableCell::new(Vec::new());
 static UTF8_3_TO_EUC_VEC: LookupTableCell<Vec<[u8; 3]>> = LookupTableCell::new(Vec::new());
-static EUC_3_TO_UTF8_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 3], [u8; 4]>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
-static UTF8_2_4_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 4], [u8; 3]>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
-static COMBINE_EUC_TO_UTF8_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 3], [u8; 8]>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
-static COMBINE_UTF8_4_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 4], [u8; 3]>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
-static COMBINE_UTF8_6_TO_EUC_MAP: once_cell::sync::Lazy<RwLock<FxHashMap<[u8; 6], [u8; 3]>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(FxHashMap::default()));
+static EUC_3_TO_UTF8_MAP: std::sync::LazyLock<RwLock<FxHashMap<[u8; 3], [u8; 4]>>> =
+    std::sync::LazyLock::new(|| RwLock::new(FxHashMap::default()));
+static UTF8_2_4_TO_EUC_MAP: std::sync::LazyLock<RwLock<FxHashMap<[u8; 4], [u8; 3]>>> =
+    std::sync::LazyLock::new(|| RwLock::new(FxHashMap::default()));
+static COMBINE_EUC_TO_UTF8_MAP: std::sync::LazyLock<RwLock<FxHashMap<[u8; 3], [u8; 8]>>> =
+    std::sync::LazyLock::new(|| RwLock::new(FxHashMap::default()));
+static COMBINE_UTF8_4_TO_EUC_MAP: std::sync::LazyLock<RwLock<FxHashMap<[u8; 4], [u8; 3]>>> =
+    std::sync::LazyLock::new(|| RwLock::new(FxHashMap::default()));
+static COMBINE_UTF8_6_TO_EUC_MAP: std::sync::LazyLock<RwLock<FxHashMap<[u8; 6], [u8; 3]>>> =
+    std::sync::LazyLock::new(|| RwLock::new(FxHashMap::default()));
 
 pub struct LookupTableCell<T> {
     cell: UnsafeCell<T>,

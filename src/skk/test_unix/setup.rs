@@ -10,25 +10,25 @@ use crate::skk::{encoding_simple, once_init_encoding_table, Config, Encoding};
 
 static ONCE_INIT: std::sync::Once = std::sync::Once::new();
 
-static RE_OPENSSL_MD5: once_cell::sync::Lazy<Regex> =
-    once_cell::sync::Lazy::new(|| Regex::new(r"= ([0-9a-f]{32})").unwrap());
-static RE_DOT_MD5_FILE: once_cell::sync::Lazy<Regex> =
-    once_cell::sync::Lazy::new(|| Regex::new(r"^([0-9a-f]{32})").unwrap());
-static RE_URL_FILENAME: once_cell::sync::Lazy<Regex> =
-    once_cell::sync::Lazy::new(|| Regex::new(r"/([^/]+)$").unwrap());
-static EUC_JISYO_FULL_PATHS: once_cell::sync::Lazy<RwLock<Vec<String>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
-static UTF8_JISYO_FULL_PATHS: once_cell::sync::Lazy<RwLock<Vec<String>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(Vec::new()));
-static TEST_RUNNING_COUNT: once_cell::sync::Lazy<RwLock<usize>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(0));
-type PanicDefaultHook = once_cell::sync::Lazy<
+static RE_OPENSSL_MD5: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new(r"= ([0-9a-f]{32})").unwrap());
+static RE_DOT_MD5_FILE: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new(r"^([0-9a-f]{32})").unwrap());
+static RE_URL_FILENAME: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new(r"/([^/]+)$").unwrap());
+static EUC_JISYO_FULL_PATHS: std::sync::LazyLock<RwLock<Vec<String>>> =
+    std::sync::LazyLock::new(|| RwLock::new(Vec::new()));
+static UTF8_JISYO_FULL_PATHS: std::sync::LazyLock<RwLock<Vec<String>>> =
+    std::sync::LazyLock::new(|| RwLock::new(Vec::new()));
+static TEST_RUNNING_COUNT: std::sync::LazyLock<RwLock<usize>> =
+    std::sync::LazyLock::new(|| RwLock::new(0));
+type PanicDefaultHook = std::sync::LazyLock<
     RwLock<Box<dyn Fn(&std::panic::PanicHookInfo<'_>) + 'static + Sync + Send>>,
 >;
 static PANIC_DEFAULT_HOOK: PanicDefaultHook =
-    once_cell::sync::Lazy::new(|| RwLock::new(std::panic::take_hook()));
-static PANIC_THREAD_NAME_SET: once_cell::sync::Lazy<RwLock<FxHashSet<String>>> =
-    once_cell::sync::Lazy::new(|| RwLock::new(FxHashSet::default()));
+    std::sync::LazyLock::new(|| RwLock::new(std::panic::take_hook()));
+static PANIC_THREAD_NAME_SET: std::sync::LazyLock<RwLock<FxHashSet<String>>> =
+    std::sync::LazyLock::new(|| RwLock::new(FxHashSet::default()));
 
 pub(in crate::skk) struct JisyoDownloader;
 
