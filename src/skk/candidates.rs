@@ -81,8 +81,8 @@ impl Candidates {
                 assert_ne!(*new_trimmed_slash_candidates.last().unwrap(), b'/');
             }
         }
-        if base_trimmed_slash_candidates.iter().any(|&v| v == b';')
-            || new_trimmed_slash_candidates.iter().any(|&v| v == b';')
+        if base_trimmed_slash_candidates.contains(&b';')
+            || new_trimmed_slash_candidates.contains(&b';')
         {
             // annotate が絡むので遅い
             Self::merge_annotated_trimmed_slash_candidates(
@@ -219,9 +219,7 @@ impl Candidates {
                     new_unit.2 = false;
                     // annotate は base の物を優先
                     // annotate が base に無く new に annotate が存在する場合のみ置き換える
-                    if !base_unit.0.iter().any(|&v| v == b';')
-                        && new_unit.0.iter().any(|&v| v == b';')
-                    {
+                    if !base_unit.0.contains(&b';') && new_unit.0.contains(&b';') {
                         result_vec.extend_from_slice(new_unit.0);
                     } else {
                         result_vec.extend_from_slice(base_unit.0);
