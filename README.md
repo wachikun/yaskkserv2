@@ -33,6 +33,21 @@ $ cp -av target/release/yaskkserv2_make_dictionary /YOUR-BIN-PATH/
 ```
 
 
+### Nix でのビルド
+
+Nix の `nix-command` と `flakes` を有効にした環境では、リポジトリ内で次のコマンドを実行できます。
+
+```console
+$ nix build
+$ nix run . -- --help
+$ ./result/bin/yaskkserv2_make_dictionary --help
+```
+
+`result/bin` に `yaskkserv2` と `yaskkserv2_make_dictionary` を生成します。
+依存パッケージは `flake.lock` と `Cargo.lock` で固定します。
+Nix のビルドでは、辞書のダウンロードを必要とするテストを実行しません。
+
+
 
 
 ## 用語の定義
