@@ -495,26 +495,28 @@ impl Yaskkserv2 {
         dictionary_file: &mut DictionaryFile,
         is_shutdown: &mut bool,
     ) -> HandleClientResult {
-        match socket.buffer_stream.read_until_skk_server(buffer) {
-            Ok(0) => HandleClientResult::Exit,
-            Ok(size) => {
-                let skip = Self::get_buffer_skip_count(buffer, size);
-                if size == skip {
-                    HandleClientResult::Exit
-                } else if size - skip > 0 {
-                    self.server.handle_client(
-                        &mut socket.buffer_stream,
-                        dictionary_file,
-                        &mut buffer[skip..],
-                    )
-                } else {
-                    HandleClientResult::Continue
+        loop {
+            match socket.buffer_stream.read_until_skk_server(buffer) {
+                Ok(0) => return HandleClientResult::Exit,
+                Ok(size) => {
+                    let skip = Self::get_buffer_skip_count(buffer, size);
+                    if size > skip {
+                        let result = self.server.handle_client(
+                            &mut socket.buffer_stream,
+                            dictionary_file,
+                            &mut buffer[skip..],
+                        );
+
+                        if matches!(result, HandleClientResult::Exit) {
+                            return HandleClientResult::Exit;
+                        }
+                    }
+                    buffer.clear();
                 }
-            }
-            Err(e) => {
-                if e.kind() == std::io::ErrorKind::WouldBlock {
-                    HandleClientResult::Continue
-                } else {
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    return HandleClientResult::Continue;
+                }
+                Err(e) => {
                     match socket.buffer_stream.get_ref().peer_addr() {
                         Ok(peer_addr) => Self::log_error(&format!(
                             "read_until_skk_server() error={}  addr={} port={}",
@@ -530,7 +532,7 @@ impl Yaskkserv2 {
                         )),
                     }
                     *is_shutdown = true;
-                    HandleClientResult::Exit
+                    return HandleClientResult::Exit;
                 }
             }
         }
