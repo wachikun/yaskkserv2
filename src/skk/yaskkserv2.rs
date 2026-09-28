@@ -532,7 +532,7 @@ impl Yaskkserv2 {
                         )),
                     }
                     *is_shutdown = true;
-                    return HandleClientResult::Exit;
+                    return HandleClientResult::Exit
                 }
             }
         }
